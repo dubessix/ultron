@@ -18,8 +18,16 @@ import {
 import { FaMemory } from 'react-icons/fa6'
 import { GiTinker } from 'react-icons/gi'
 import { HiComputerDesktop } from 'react-icons/hi2'
+import AgentWidget from '@renderer/components/AgentWidget'
+import TaskWidget from '@renderer/components/TaskWidget'
+import ConsciousnessWidget from '@renderer/components/ConsciousnessWidget'
+import ModelHealthCard from '@renderer/components/ModelHealthCard'
+import ErrorCompanionWidget from '@renderer/components/ErrorCompanionWidget'
+import CodingAnalyticsWidget from '@renderer/components/CodingAnalyticsWidget'
+import VSCodeBridgeWidget from '@renderer/components/VSCodeBridgeWidget'
 import * as faceapi from 'face-api.js'
 import { VisionMode } from '@renderer/IndexRoot'
+import { useThemeStore } from '@renderer/store/theme-store'
 
 interface IrisProps {
   isSystemActive: boolean
@@ -40,7 +48,7 @@ interface DashboardViewProps {
   onVisionClick: () => void
 }
 
-const glassPanel = 'bg-zinc-950/40 backdrop-blur-xl border border-white/5 rounded-2xl shadow-xl'
+const glassPanel = 'iris-glass'
 
 export default function DashboardView({
   props,
@@ -59,6 +67,8 @@ export default function DashboardView({
     isMicMuted
   } = props
 
+  const theme = useThemeStore((s) => s.theme)
+   const isDark = theme === 'dark'
   const scrollRef = useRef<HTMLDivElement>(null)
   const videoElementRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -469,6 +479,8 @@ export default function DashboardView({
         </div>
       </div>
 
+
+
       <div className="col-span-12 lg:col-span-6 relative flex flex-col items-center justify-center">
         <div
           className={`lg:hidden absolute top-4 right-4 w-32 h-24 ${glassPanel} z-50 overflow-hidden ${isVideoOn ? 'block' : 'hidden'}`}
@@ -515,8 +527,9 @@ export default function DashboardView({
         </div>
       </div>
 
-      <div className="hidden lg:flex col-span-3 flex-col overflow-hidden h-full z-40">
-        <div className={`${glassPanel} h-full p-4 flex flex-col`}>
+      {/* ── Right Sidebar: Transcript + Widgets ── */}
+      <div className="hidden lg:flex col-span-3 flex-col overflow-y-auto h-full z-40 gap-2" style={{ scrollbarWidth: 'none' }}>
+        <div className={`${glassPanel} p-4 flex flex-col`} style={{ maxHeight: '45%', minHeight: '180px' }}>
           <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-2">
             <span className="text-[10px] font-bold tracking-widest text-zinc-400">
               <RiTerminalBoxLine className="inline mr-1" /> TRANSCRIPT
@@ -538,7 +551,8 @@ export default function DashboardView({
                   className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`max-w-[95%] py-2 px-3 rounded-lg text-[11px] leading-relaxed border font-mono font-semibold ${msg.role === 'user' ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-100/90 rounded-br-none' : 'bg-zinc-900/50 border-white/5 text-zinc-400 rounded-bl-none'}`}
+                    className={`max-w-[95%] py-2 px-3 rounded-lg text-[11px] leading-relaxed border font-mono font-semibold ${msg.role === 'user' ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-100/90 rounded-br-none' : 'border-white/5 text-zinc-400 rounded-bl-none'}`}
+                    style={msg.role !== 'user' ? { background: isDark ? 'rgba(24,24,27,0.5)' : 'rgba(241,245,249,0.8)' } : undefined}
                   >
                     {msg.parts && msg.parts[0] ? msg.parts[0].text : msg.content}
                   </div>
@@ -546,6 +560,15 @@ export default function DashboardView({
               ))
             )}
           </div>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflow: 'auto' }}>
+          <VSCodeBridgeWidget />
+          <ModelHealthCard />
+          <ErrorCompanionWidget />
+          <TaskWidget />
+          <CodingAnalyticsWidget />
+          <AgentWidget />
+          <ConsciousnessWidget />
         </div>
       </div>
     </div>

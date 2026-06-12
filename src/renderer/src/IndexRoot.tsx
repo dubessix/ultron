@@ -16,10 +16,17 @@ import ResearchWidget from './Widgets/DeepResearch'
 import SemanticWidget from './Widgets/SematicSearch'
 import SmartDropZonesWidget from './Widgets/SmartZoneWidget'
 import TitleBar from './components/Titlebar'
+import CommandPalette from './components/CommandPalette'
 
 export type VisionMode = 'camera' | 'screen' | 'none'
 
 const IndexRoot = () => {
+  // ─── Initialize theme on mount ───
+  useEffect(() => {
+    const saved = localStorage.getItem('iris_theme') || 'dark'
+    document.documentElement.setAttribute('data-theme', saved)
+  }, [])
+
   const [isOverlay, setIsOverlay] = useState(false)
 
   const [isSystemActive, setIsSystemActive] = useState(false)
@@ -46,7 +53,7 @@ const IndexRoot = () => {
         setIsMicMuted(true)
         stopVision()
       }
-    }, 1000)
+    }, 3000)
     return () => clearInterval(watchdog)
   }, [isSystemActive])
 

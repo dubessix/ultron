@@ -3,12 +3,16 @@ import {
   RiSubtractLine,
   RiCloseLine,
   RiCheckboxBlankLine,
-  RiCheckboxMultipleBlankLine
+  RiCheckboxMultipleBlankLine,
+  RiSunLine,
+  RiMoonLine
 } from 'react-icons/ri'
+import { useThemeStore } from '@renderer/store/theme-store'
 
 const TitleBar = () => {
   const [isMaximized, setIsMaximized] = useState(false)
   const [isMac, setIsMac] = useState(false)
+  const { theme, toggleTheme } = useThemeStore()
 
   useEffect(() => {
     if (window.electron && window.electron.process) {
@@ -18,6 +22,11 @@ const TitleBar = () => {
     }
   }, [])
 
+  // Sync theme attribute on <html>
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
   const minimize = () => window.electron.ipcRenderer.send('window-min')
   const toggleMaximize = () => {
     setIsMaximized(!isMaximized)
@@ -25,9 +34,22 @@ const TitleBar = () => {
   }
   const close = () => window.electron.ipcRenderer.send('window-close')
 
+  const isDark = theme === 'dark'
+
   return (
-    <div className="w-full h-14 flex items-center justify-between px-0 bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-800/50 drag-region select-none z-50 relative ">
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-emerald-500/20 to-transparent" />
+    <div
+      className="w-full h-14 flex items-center justify-between px-0 backdrop-blur-2xl border-b drag-region select-none z-50 relative"
+      style={{
+        backgroundColor: 'var(--iris-bg-bar)',
+        borderColor: 'var(--iris-border-primary)'
+      }}
+    >
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px"
+        style={{
+          background: `linear-gradient(to right, transparent, var(--iris-accent-glow), transparent)`
+        }}
+      />
 
       <div className="flex items-center h-full pl-5 pr-3 gap-3 z-50 no-drag">
         {isMac ? (
@@ -63,11 +85,15 @@ const TitleBar = () => {
         ) : (
           <div className="flex items-center gap-3 opacity-80">
             <div className="relative flex items-center justify-center w-6 h-6">
-              <div className="absolute inset-0 rounded-lg bg-emerald-500/20 blur-md animate-pulse" />
+              <div
+                className="absolute inset-0 rounded-lg blur-md animate-pulse"
+                style={{ backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(5,150,105,0.15)' }}
+              />
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className="w-5 h-5 text-emerald-400 relative z-10"
+                style={{ color: 'var(--iris-accent-light)' }}
+                className="w-5 h-5 relative z-10"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -78,7 +104,10 @@ const TitleBar = () => {
                 <line x1="12" x2="12" y1="19" y2="22" />
               </svg>
             </div>
-            <span className="text-xs font-semibold text-zinc-400 tracking-widest uppercase">
+            <span
+              className="text-xs font-semibold tracking-widest uppercase"
+              style={{ color: 'var(--iris-text-muted)' }}
+            >
               IRIS
             </span>
           </div>
@@ -90,67 +119,131 @@ const TitleBar = () => {
           {[1, 2, 3, 2].map((bar, i) => (
             <div
               key={i}
-              className="w-0.75 bg-emerald-400 rounded-full animate-pulse"
+              className="w-0.75 rounded-full animate-pulse"
               style={{
+                backgroundColor: 'var(--iris-accent-light)',
                 height: i === 0 || i === 3 ? '60%' : '100%',
                 animationDelay: `${i * 0.15}s`,
                 animationDuration: '1.4s',
-                boxShadow: '0 0 8px rgba(52, 211, 153, 0.5)'
+                boxShadow: isDark ? '0 0 8px rgba(52, 211, 153, 0.5)' : 'none'
               }}
             />
           ))}
         </div>
 
         <div className="flex items-center gap-2.5">
-          <span className="text-xs font-bold text-zinc-100 tracking-[0.3em] uppercase font-mono">
+          <span
+            className="text-xs font-bold tracking-[0.3em] uppercase font-mono"
+            style={{ color: 'var(--iris-text-primary)' }}
+          >
             IRIS
           </span>
-          <span className="text-[11px] text-zinc-600 font-mono">//</span>
-          <span className="text-[11px] font-medium text-zinc-500 tracking-widest uppercase font-mono">
+          <span
+            className="text-[11px] font-mono"
+            style={{ color: 'var(--iris-text-dim)' }}
+          >
+            //
+          </span>
+          <span
+            className="text-[11px] font-medium tracking-widest uppercase font-mono"
+            style={{ color: 'var(--iris-text-muted)' }}
+          >
             {isMac ? 'macOS' : 'SYSTEM'}
           </span>
         </div>
 
         <div className="relative flex items-center justify-center w-2.5 h-2.5">
-          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30 animate-ping" />
           <span
-            className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"
-            style={{ boxShadow: '0 0 10px rgba(52, 211, 153, 0.7)' }}
+            className="absolute inline-flex h-full w-full rounded-full opacity-30 animate-ping"
+            style={{ backgroundColor: 'var(--iris-accent)' }}
+          />
+          <span
+            className="relative inline-flex rounded-full h-2 w-2"
+            style={{
+              backgroundColor: 'var(--iris-accent)',
+              boxShadow: isDark ? '0 0 10px rgba(52, 211, 153, 0.7)' : '0 0 6px rgba(16,185,129,0.4)'
+            }}
           />
         </div>
       </div>
 
-      {!isMac && (
-        <div className="flex h-full no-drag z-50">
-          <button
-            onClick={minimize}
-            className="w-14 h-full flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all duration-200"
-            title="Minimize"
-          >
-            <RiSubtractLine size={18} strokeWidth={1.5} />
-          </button>
-          <button
-            onClick={toggleMaximize}
-            className="w-14 h-full flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-all duration-200"
-            title={isMaximized ? 'Restore' : 'Maximize'}
-          >
-            {isMaximized ? (
-              <RiCheckboxMultipleBlankLine size={15} strokeWidth={1.5} />
-            ) : (
-              <RiCheckboxBlankLine size={15} strokeWidth={1.5} />
-            )}
-          </button>
-          <button
-            onClick={close}
-            className="w-14 h-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-red-500/90 transition-all duration-200"
-            title="Close"
-          >
-            <RiCloseLine size={20} strokeWidth={1.5} />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center h-full no-drag z-50">
+        {/* ─── Theme Toggle ─── */}
+        <button
+          onClick={toggleTheme}
+          className="h-full px-4 flex items-center justify-center transition-all duration-300 cursor-pointer"
+          style={{ color: 'var(--iris-text-muted)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--iris-accent-light)'
+            e.currentTarget.style.backgroundColor = 'var(--iris-bg-hover)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--iris-text-muted)'
+            e.currentTarget.style.backgroundColor = 'transparent'
+          }}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDark ? <RiSunLine size={18} /> : <RiMoonLine size={18} />}
+        </button>
 
-      {isMac && <div className="w-25" />}
+        {!isMac && (
+          <>
+            <button
+              onClick={minimize}
+              className="w-14 h-full flex items-center justify-center transition-all duration-200"
+              style={{ color: 'var(--iris-text-muted)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--iris-text-primary)'
+                e.currentTarget.style.backgroundColor = 'var(--iris-bg-hover)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--iris-text-muted)'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Minimize"
+            >
+              <RiSubtractLine size={18} strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={toggleMaximize}
+              className="w-14 h-full flex items-center justify-center transition-all duration-200"
+              style={{ color: 'var(--iris-text-muted)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--iris-text-primary)'
+                e.currentTarget.style.backgroundColor = 'var(--iris-bg-hover)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--iris-text-muted)'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title={isMaximized ? 'Restore' : 'Maximize'}
+            >
+              {isMaximized ? (
+                <RiCheckboxMultipleBlankLine size={15} strokeWidth={1.5} />
+              ) : (
+                <RiCheckboxBlankLine size={15} strokeWidth={1.5} />
+              )}
+            </button>
+            <button
+              onClick={close}
+              className="w-14 h-full flex items-center justify-center transition-all duration-200"
+              style={{ color: 'var(--iris-text-muted)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#ffffff'
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.9)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--iris-text-muted)'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Close"
+            >
+              <RiCloseLine size={20} strokeWidth={1.5} />
+            </button>
+          </>
+        )}
+        {isMac && <div className="w-25" />}
+      </div>
     </div>
   )
 }

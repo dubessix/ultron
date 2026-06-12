@@ -49,9 +49,40 @@ import registerScreenPeeler from './handlers/ScreenPeeler-handler'
 import registerPhantomKeyboard from './handlers/PhantomControl-handler'
 import registerSecurityVault from './security/Security'
 import registerLockSystem from './security/lock-system'
+import registerTelegramBot from './telegram/telegram-bot'
+import registerModelRouter from './ai/model-router'
+import registerPersonalityEngine from './soul/personality-engine'
+import registerAmbientPresence from './soul/ambient-presence'
+import registerSessionRitual from './soul/session-ritual'
+import registerNoticeEngine from './soul/notice-engine'
+import registerEmotionEngine from './soul/emotion-engine'
+import registerSuggestionEngine from './soul/suggestion-engine'
+import registerPairProgrammer from './soul/pair-programmer'
+import registerEpisodicMemory from './brain/episodic-memory'
+import registerSemanticMemory from './brain/semantic-memory'
+import registerBrainRouter from './brain/brain-router'
+import { registerOrchestrator } from './agents/orchestrator'
+import registerErrorCompanion from './coding/error-companion'
+import registerCodingAnalytics from './coding/coding-analytics'
+import registerCommandPalette from './coding/command-palette'
+import registerVSCodeBridge from './coding/vscode-bridge'
+import Orchestrator from './agents/orchestrator'
+import registerProceduralMemory from './brain/procedural-memory'
+import registerSharedConsciousness from './brain/shared-consciousness'
 import { autoUpdater } from 'electron-updater'
 
 app.commandLine.appendSwitch('use-fake-ui-for-media-stream')
+
+// Linux-specific: disable GPU sandbox if running under Wayland or root
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('disable-gpu-sandbox')
+  // Wayland support
+  if (process.env.XDG_SESSION_TYPE === 'wayland') {
+    app.commandLine.appendSwitch('ozone-platform', 'wayland')
+    app.commandLine.appendSwitch('enable-features', 'UseOzonePlatform')
+  }
+}
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
@@ -74,10 +105,10 @@ const secureConfigPath = join(app.getPath('userData'), 'iris_secure_vault.json')
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
-    height: 720,
+    height: 720, 
     show: false,
     fullscreen: true,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     frame: false,
     transparent: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -90,7 +121,10 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    if (mainWindow) mainWindow.show()
+    if (mainWindow) {
+      // Small delay to let renderer paint first frame (anti-flash)
+      setTimeout(() => mainWindow!.show(), 100)
+    }
   })
 
   ipcMain.on('window-min', () => mainWindow?.minimize())
@@ -301,6 +335,25 @@ app.whenReady().then(() => {
 
   registerLockSystem()
   registerSecurityVault()
+  registerModelRouter()
+  registerPersonalityEngine()
+  registerAmbientPresence()
+  registerSessionRitual()
+  registerNoticeEngine()
+  registerEmotionEngine()
+  registerSuggestionEngine()
+  registerPairProgrammer()
+  registerEpisodicMemory()
+  registerSemanticMemory()
+  registerBrainRouter()
+  registerProceduralMemory()
+  registerSharedConsciousness()
+  registerOrchestrator()
+  registerErrorCompanion()
+  registerCodingAnalytics()
+  registerCommandPalette()
+  registerVSCodeBridge()
+  registerTelegramBot(ipcMain)
   registerPhantomKeyboard()
   registerScreenPeeler()
   registerDropZoneControl(ipcMain)
@@ -339,6 +392,40 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+
+  // ── Initialize IRIS Soul ──
+  if (mainWindow) {
+    const { AmbientPresence } = require('./soul/ambient-presence')
+    AmbientPresence.init(mainWindow)
+
+    const { NoticeEngine } = require('./soul/notice-engine')
+    NoticeEngine.init(mainWindow)
+
+    const { EmotionEngine } = require('./soul/emotion-engine')
+    EmotionEngine.init(mainWindow)
+
+    const { SuggestionEngine } = require('./soul/suggestion-engine')
+    SuggestionEngine.init(mainWindow)
+
+    const { PairProgrammer } = require('./soul/pair-programmer')
+    PairProgrammer.init(mainWindow)
+
+    Orchestrator.init(mainWindow)
+
+    // ── Initialize Procedural Memory (task checker) ──
+    const { ProceduralMemory } = require('./brain/procedural-memory')
+    ProceduralMemory.startChecker(mainWindow)
+
+    // ── Initialize Shared Consciousness ──
+    const { SharedConsciousness } = require('./brain/shared-consciousness')
+    SharedConsciousness.init(mainWindow)
+
+    // Perform start ritual and send to renderer
+    const { SessionRitual } = require('./soul/session-ritual')
+    SessionRitual.performStartRitual().then((ritual: any) => {
+      mainWindow.webContents.send('soul:start-ritual', ritual)
+    })
+  }
 
   globalShortcut.register('CommandOrControl+Shift+I', () => toggleOverlayMode())
   ipcMain.on('toggle-overlay', () => toggleOverlayMode())

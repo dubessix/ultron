@@ -1573,12 +1573,101 @@ ${JSON.stringify(history)}
     }, 3000)
   }
 
+  /**
+   * Find and return the best mic device (prefers Bluetooth headset).
+   * Falls back to default if no Bluetooth found.
+   */
+  private async findBluetoothMicDeviceId(): Promise<string | undefined> {
+    try {
+      // Must get permission first to see device labels
+      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      tempStream.getTracks().forEach(t => t.stop())
+
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const audioInputs = devices.filter(d => d.kind === 'audioinput')
+
+      // Priority 1: Bluetooth headset (usually contains "bt", "bluetooth", "headset", "headphone")
+      const btKeywords = ['bt', 'bluetooth', 'headset', 'headphone', 'airpods', 'galaxy buds', 'jabra', 'sony', 'bose']
+      for (const dev of audioInputs) {
+        const label = (dev.label || '').toLowerCase()
+        if (btKeywords.some(kw => label.includes(kw))) {
+          console.log(`[IRIS] Found Bluetooth mic: ${dev.label} (${dev.deviceId})`)
+          return dev.deviceId
+        }
+      }
+
+      // Priority 2: Any non-default external device
+      for (const dev of audioInputs) {
+        const label = (dev.label || '').toLowerCase()
+        if (label && !label.includes('default') && !label.includes('built-in') && !label.includes('internal')) {
+          console.log(`[IRIS] Found external mic: ${dev.label} (${dev.deviceId})`)
+          return dev.deviceId
+        }
+      }
+
+      console.log(`[IRIS] No Bluetooth mic found, using default. Available: ${audioInputs.map(d => d.label).join(', ')}`)
+      return undefined  // Let browser pick default
+    } catch (e) {
+      console.warn('[IRIS] Could not enumerate audio devices:', e)
+      return undefined
+    }
+  }
+
+  /**
+   * Find the speaker device ID (non-Bluetooth, for AI audio output).
+   */
+  private async findSpeakerDeviceId(): Promise<string | undefined> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const audioOutputs = devices.filter(d => d.kind === 'audiooutput')
+
+      // Prefer non-Bluetooth speakers
+      const btKeywords = ['bt', 'bluetooth', 'headset', 'headphone', 'airpods']
+      for (const dev of audioOutputs) {
+        const label = (dev.label || '').toLowerCase()
+        if (label && !btKeywords.some(kw => label.includes(kw))) {
+          console.log(`[IRIS] Found speaker output: ${dev.label} (${dev.deviceId})`)
+          return dev.deviceId
+        }
+      }
+
+      // Fall back to any output
+      if (audioOutputs.length > 0 && audioOutputs[0].deviceId) {
+        return audioOutputs[0].deviceId
+      }
+      return undefined
+    } catch (e) {
+      return undefined
+    }
+  }
+
   async startMicrophone(): Promise<void> {
     if (!this.audioContext) return
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 16000 }
-      })
+      // Find Bluetooth mic device
+      const btMicId = await this.findBluetoothMicDeviceId()
+
+      const constraints: MediaStreamConstraints = {
+        audio: btMicId
+          ? {
+              deviceId: { exact: btMicId },
+              channelCount: 1,
+              sampleRate: 16000,
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          : {
+              channelCount: 1,
+              sampleRate: 16000,
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+      }
+
+      this.mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      console.log(`[IRIS] Mic active: ${this.mediaStream.getAudioTracks()[0]?.label || 'default'}`)
 
       const source = this.audioContext.createMediaStreamSource(this.mediaStream)
       const inputSampleRate = this.audioContext.sampleRate
@@ -1618,9 +1707,13 @@ ${JSON.stringify(history)}
       }
 
       source.connect(this.workletNode)
-      this.workletNode.connect(this.audioContext.destination)
+      // DO NOT connect worklet to audioContext.destination!
+      // That would echo mic input through speakers.
+      // The worklet only needs to process PCM data for WebSocket sending.
+      // AI response audio is handled separately in scheduleAudioChunk().
     } catch (err) {
-      alert('Microphone access denied or failed to initialize.')
+      console.error('[IRIS] Mic error:', err)
+      alert('Microphone access denied or failed to initialize.\n\nIf using Bluetooth headphones, make sure they are connected and set as input device in System Settings.')
     }
   }
 
@@ -1637,6 +1730,10 @@ ${JSON.stringify(history)}
     source.connect(this.analyser)
     this.analyser.connect(this.audioContext.destination)
 
+    // Route AI audio output to speakers (not Bluetooth headphones)
+    // setSinkId lets us pick which device plays the audio
+    this.routeOutputToSpeakers(source)
+
     const currentTime = this.audioContext.currentTime
     if (this.nextStartTime < currentTime) this.nextStartTime = currentTime + 0.02
 
@@ -1646,6 +1743,47 @@ ${JSON.stringify(history)}
     this.activeAudioNodes.push(source)
     source.onended = () => {
       this.activeAudioNodes = this.activeAudioNodes.filter((n) => n !== source)
+    }
+  }
+
+  /**
+   * Route audio output to speakers instead of Bluetooth headphones.
+   * Uses HTMLAudioElement.setSinkId() to select the non-BT output device.
+   */
+  private async routeOutputToSpeakers(_source: AudioBufferSourceNode): Promise<void> {
+    try {
+      // Chromium supports setSinkId on AudioContext via MediaStream destination
+      // We create a hidden audio element to control output routing
+      if (!(this as any)._outputAudioEl) {
+        const dest = this.audioContext!.createMediaStreamDestination()
+        this.analyser!.connect(dest)
+
+        const audioEl = document.createElement('audio')
+        audioEl.srcObject = dest.stream
+        audioEl.volume = 1
+        ;(this as any)._outputAudioEl = audioEl
+
+        // Try to find speaker device (non-Bluetooth)
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        const outputs = devices.filter(d => d.kind === 'audiooutput')
+        const btKeywords = ['bt', 'bluetooth', 'headset', 'headphone', 'airpods']
+        
+        for (const dev of outputs) {
+          const label = (dev.label || '').toLowerCase()
+          if (label && !btKeywords.some(kw => label.includes(kw))) {
+            if (typeof (audioEl as any).setSinkId === 'function') {
+              await (audioEl as any).setSinkId(dev.deviceId)
+              console.log(`[IRIS] AI output routed to speaker: ${dev.label}`)
+            }
+            break
+          }
+        }
+
+        await audioEl.play()
+      }
+    } catch (e) {
+      // setSinkId not supported or no speaker found — audio goes to default
+      console.warn('[IRIS] Could not route output to speakers:', e)
     }
   }
 
@@ -1686,6 +1824,12 @@ ${JSON.stringify(history)}
     if (this.analyser) {
       this.analyser.disconnect()
       this.analyser = null
+    }
+    // Clean up output routing audio element
+    if ((this as any)._outputAudioEl) {
+      (this as any)._outputAudioEl.pause()
+      ;(this as any)._outputAudioEl.srcObject = null
+      ;(this as any)._outputAudioEl = null
     }
   }
 }

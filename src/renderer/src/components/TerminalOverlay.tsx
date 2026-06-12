@@ -92,7 +92,7 @@ export default function TerminalOverlay() {
           : 'translate-y-10 opacity-0 scale-95 pointer-events-none'
       }`}
     >
-      <div className="relative bg-black/85 backdrop-blur-md border border-green-500/30 rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.15)] overflow-hidden flex flex-col">
+      <div className="relative bg-black/85 backdrop-blur-md border border-green-500/30 iris-dark-card rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.15)] overflow-hidden flex flex-col">
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] z-10 bg-size-[100%_2px,3px_100%] opacity-20"></div>
 
         <div className="flex items-center justify-between px-3 py-2 bg-green-900/10 border-b border-green-500/20">

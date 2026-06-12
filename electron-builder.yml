@@ -54,14 +54,80 @@ dmg:
   artifactName: ${name}-${version}.${ext}
 
 linux:
+  icon: build/icon.png
   target:
-    - AppImage
-    - snap
-    - deb
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: snap
+    - target: rpm
+      arch:
+        - x64
+    - target: tar.gz
+      arch:
+        - x64
   maintainer: Harsh Pandey
+  vendor: IRIS AI
   category: Utility
+  description: IRIS AI - Intelligent Voice-First Operating Layer for your desktop
+  desktop:
+    Name: IRIS AI
+    Comment: AI-Powered Desktop Assistant
+    Categories: Utility;AI;Desktop;
+    StartupWMClass: iris-ai
+    Terminal: false
+    Type: Application
+  executableName: iris-ai
+  synopsis: AI Desktop Assistant
 
 appImage:
+  artifactName: ${name}-${version}.${ext}
+
+deb:
+  depends:
+    - libnotify4
+    - libxtst6
+    - libnss3
+    - libxss1
+    - libasound2
+    - libgbm1
+    - libgtk-3-0
+    - wmctrl
+    - xclip
+    - xdotool
+  afterInstall: /usr/bin/xdg-desktop-menu forceupdate
+  artifactName: ${name}-${version}.${ext}
+
+snap:
+  plugs:
+    - desktop
+    - desktop-legacy
+    - home
+    - x11
+    - unity7
+    - browser-support
+    - network
+    - pulseaudio
+    - camera
+    - microphone
+    - screen-inhibit-control
+    - wayland
+    - opengl
+
+rpm:
+  depends:
+    - libnotify
+    - libXtst
+    - nss
+    - libXScrnSaver
+    - alsa-lib
+    - mesa-libgbm
+    - gtk3
   artifactName: ${name}-${version}.${ext}
 
 npmRebuild: false

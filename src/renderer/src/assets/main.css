@@ -6,55 +6,215 @@ body {
   width: 100%;
 }
 
+/* ━━━ THEME SYSTEM ━━━ */
+
+/* ─── DARK MODE (default) ─── */
+[data-theme='dark'] {
+  --iris-bg-primary: #000000;
+  --iris-bg-secondary: #09090b;
+  --iris-bg-tertiary: #18181b;
+  --iris-bg-card: rgba(9, 9, 11, 0.4);
+  --iris-bg-hover: rgba(255, 255, 255, 0.05);
+  --iris-bg-bar: rgba(9, 9, 11, 0.8);
+  --iris-bg-input: rgba(0, 0, 0, 0.4);
+  --iris-bg-metric: rgba(0, 0, 0, 0.6);
+
+  --iris-border-primary: rgba(255, 255, 255, 0.05);
+  --iris-border-hover: rgba(255, 255, 255, 0.1);
+  --iris-border-accent: rgba(16, 185, 129, 0.2);
+  --iris-border-glow: rgba(16, 185, 129, 0.3);
+
+  --iris-text-primary: #f4f4f5;
+  --iris-text-secondary: #a1a1aa;
+  --iris-text-muted: #71717a;
+  --iris-text-dim: #52525b;
+  --iris-text-label: #3f3f46;
+
+  --iris-accent: #10b981;
+  --iris-accent-light: #34d399;
+  --iris-accent-bg: rgba(16, 185, 129, 0.1);
+  --iris-accent-glow: rgba(16, 185, 129, 0.5);
+
+  --iris-cyan: #06b6d4;
+  --iris-orange: #f97316;
+  --iris-purple: #a855f7;
+  --iris-red: #ef4444;
+
+  --iris-shadow: rgba(0, 0, 0, 0.5);
+  --iris-glass-blur: blur(24px);
+}
+
+/* ─── LIGHT MODE ─── */
+[data-theme='light'] {
+  --iris-bg-primary: #f8fafc;
+  --iris-bg-secondary: #ffffff;
+  --iris-bg-tertiary: #f1f5f9;
+  --iris-bg-card: rgba(255, 255, 255, 0.8);
+  --iris-bg-hover: rgba(0, 0, 0, 0.04);
+  --iris-bg-bar: rgba(255, 255, 255, 0.9);
+  --iris-bg-input: rgba(241, 245, 249, 0.8);
+  --iris-bg-metric: rgba(241, 245, 249, 0.6);
+
+  --iris-border-primary: rgba(0, 0, 0, 0.06);
+  --iris-border-hover: rgba(0, 0, 0, 0.12);
+  --iris-border-accent: rgba(16, 185, 129, 0.25);
+  --iris-border-glow: rgba(16, 185, 129, 0.4);
+
+  --iris-text-primary: #0f172a;
+  --iris-text-secondary: #475569;
+  --iris-text-muted: #94a3b8;
+  --iris-text-dim: #cbd5e1;
+  --iris-text-label: #e2e8f0;
+
+  --iris-accent: #059669;
+  --iris-accent-light: #10b981;
+  --iris-accent-bg: rgba(16, 185, 129, 0.08);
+  --iris-accent-glow: rgba(16, 185, 129, 0.25);
+
+  --iris-cyan: #0891b2;
+  --iris-orange: #ea580c;
+  --iris-purple: #7c3aed;
+  --iris-red: #dc2626;
+
+  --iris-shadow: rgba(0, 0, 0, 0.08);
+  --iris-glass-blur: blur(20px);
+}
+
+/* ━━━ GLOBAL COMPONENTS ━━━ */
+
 @keyframes scan {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-.drag-region {
-  -webkit-app-region: drag;
-}
-
-.no-drag {
-  -webkit-app-region: no-drag;
-}
-
-button {
-  -webkit-app-region: no-drag;
-}
+.drag-region { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
+button { -webkit-app-region: no-drag; }
 
 .scrollbar-small {
-  scrollbar-color: #9b9b9b transparent;
+  scrollbar-color: var(--iris-text-muted) transparent;
   scrollbar-width: auto;
 }
 
-.react-flow__controls {
+/* ─── Theme-aware ReactFlow ─── */
+[data-theme='dark'] .react-flow__controls {
   background-color: #111113 !important;
   border: 1px solid #27272a !important;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
-
-.react-flow__controls-button {
+[data-theme='dark'] .react-flow__controls-button {
   background: transparent !important;
   border: none !important;
   border-bottom: 1px solid #27272a !important;
   fill: #71717a !important;
 }
-
-.react-flow__controls-button:last-child {
-  border-bottom: none !important;
-}
-
-.react-flow__controls-button:hover {
+[data-theme='dark'] .react-flow__controls-button:hover {
   background-color: #18181b !important;
 }
 
-.react-flow__controls-button svg:hover {
-  fill: #a1a1aa !important;
+[data-theme='light'] .react-flow__controls {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
+[data-theme='light'] .react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  fill: #94a3b8 !important;
+}
+[data-theme='light'] .react-flow__controls-button:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* ━━━ GLASS PANEL VARIANTS ━━━ */
+
+.iris-glass {
+  background: var(--iris-bg-card);
+  backdrop-filter: var(--iris-glass-blur);
+  -webkit-backdrop-filter: var(--iris-glass-blur);
+  border: 1px solid var(--iris-border-primary);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px var(--iris-shadow);
+}
+
+.iris-glass-accent {
+  background: var(--iris-bg-card);
+  backdrop-filter: var(--iris-glass-blur);
+  -webkit-backdrop-filter: var(--iris-glass-blur);
+  border: 1px solid var(--iris-border-accent);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px var(--iris-accent-glow);
+}
+
+
+/* ━━━ THEME-AWARE WIDGET UTILITIES ━━━ */
+
+/* Widget card background — adapts to theme */
+.iris-widget-bg {
+  background: var(--iris-bg-card);
+  backdrop-filter: var(--iris-glass-blur);
+  -webkit-backdrop-filter: var(--iris-glass-blur);
+  border: 1px solid var(--iris-border-primary);
+}
+
+/* Dark-mode-only styles (widgets that hardcode dark colors) */
+[data-theme='dark'] .iris-dark-card {
+  background: rgba(10,10,12,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #e4e4e7;
+}
+
+[data-theme='light'] .iris-dark-card {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.06);
+  color: #1e293b;
+}
+
+/* Sub-text colors */
+[data-theme='dark'] .iris-sub-text { color: #a1a1aa; }
+[data-theme='light'] .iris-sub-text { color: #64748b; }
+[data-theme='dark'] .iris-dim-text { color: #52525b; }
+[data-theme='light'] .iris-dim-text { color: #94a3b8; }
+[data-theme='dark'] .iris-label-text { color: #3f3f46; }
+[data-theme='light'] .iris-label-text { color: #cbd5e1; }
+[data-theme='dark'] .iris-mono-text { color: #e4e4e7; }
+[data-theme='light'] .iris-mono-text { color: #1e293b; }
+
+/* Input fields */
+[data-theme='dark'] .iris-input {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #e4e4e7;
+}
+[data-theme='light'] .iris-input {
+  background: rgba(241,245,249,0.8);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #1e293b;
+}
+
+/* Tag badges */
+[data-theme='dark'] .iris-tag { background: rgba(255,255,255,0.03); color: #52525b; }
+[data-theme='light'] .iris-tag { background: rgba(0,0,0,0.03); color: #94a3b8; }
+
+/* Scrollbar */
+[data-theme='dark'] .iris-scroll::-webkit-scrollbar { width: 4px; }
+[data-theme='dark'] .iris-scroll::-webkit-scrollbar-track { background: transparent; }
+[data-theme='dark'] .iris-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
+[data-theme='light'] .iris-scroll::-webkit-scrollbar { width: 4px; }
+[data-theme='light'] .iris-scroll::-webkit-scrollbar-track { background: transparent; }
+[data-theme='light'] .iris-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+/* Light mode specific overrides for dark-background widgets */
+[data-theme='light'] .iris-glass {
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+
+/* Prevent text selection flicker */
+::selection { background: rgba(16,185,129,0.3); }

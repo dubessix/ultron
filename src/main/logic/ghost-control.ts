@@ -4,6 +4,7 @@ import screenshot from 'screenshot-desktop'
 import loudness from 'loudness'
 import path from 'path'
 import { exec } from 'child_process'
+import os from 'os'
 
 keyboard.config.autoDelayMs = 20
 
@@ -21,6 +22,7 @@ const KEY_MAP: Record<string, Key> = {
   alt: Key.LeftAlt,
   command: Key.LeftSuper,
   win: Key.LeftSuper,
+  super: Key.LeftSuper,
   up: Key.Up,
   down: Key.Down,
   left: Key.Left,
@@ -60,12 +62,12 @@ const KEY_MAP: Record<string, Key> = {
 }
 
 function generateHumanPath(start: Point, end: Point): Point[] {
-  const steps = 25 
+  const steps = 25
   const pathArray: Point[] = []
 
   const directionX = end.x > start.x ? 1 : -1
   const directionY = end.y > start.y ? 1 : -1
-  const deviation = Math.random() * 80 + 20 
+  const deviation = Math.random() * 80 + 20
 
   const controlPoint = new Point(
     start.x +
@@ -88,12 +90,27 @@ function generateHumanPath(start: Point, end: Point): Point[] {
 export default function registerGhostControl(ipcMain: IpcMain) {
   ipcMain.handle('copy-file-to-clipboard', async (_event, filePath: string) => {
     return new Promise((resolve) => {
-      const cmd = `powershell -command "Set-Clipboard -Path '${filePath}'"`
-      exec(cmd, (error) => {
-        if (error) {
-          resolve(false)
-        } else resolve(true)
-      })
+      const platform = os.platform()
+
+      if (platform === 'linux') {
+        // Linux: use xclip to copy file path to clipboard
+        const cmd = `xclip -selection clipboard -t text/uri-list <<< "file://${filePath}"`
+        exec(cmd, (error) => {
+          if (error) {
+            // Fallback: just copy the text path
+            clipboard.writeText(filePath)
+            resolve(true)
+          } else resolve(true)
+        })
+      } else {
+        // Windows: PowerShell
+        const cmd = `powershell -command "Set-Clipboard -Path '${filePath}'"`
+        exec(cmd, (error) => {
+          if (error) {
+            resolve(false)
+          } else resolve(true)
+        })
+      }
     })
   })
 
@@ -103,8 +120,14 @@ export default function registerGhostControl(ipcMain: IpcMain) {
         if (action.type === 'paste') {
           clipboard.writeText(action.text)
           await new Promise((r) => setTimeout(r, 200))
-          await keyboard.pressKey(Key.LeftControl, Key.V)
-          await keyboard.releaseKey(Key.V, Key.LeftControl)
+          // On Linux, use Ctrl+V (Super key varies)
+          if (os.platform() === 'linux') {
+            await keyboard.pressKey(Key.LeftControl, Key.V)
+            await keyboard.releaseKey(Key.V, Key.LeftControl)
+          } else {
+            await keyboard.pressKey(Key.LeftControl, Key.V)
+            await keyboard.releaseKey(Key.V, Key.LeftControl)
+          }
         } else if (action.type === 'wait') {
           await new Promise((r) => setTimeout(r, action.ms || 500))
         } else if (action.type === 'type') {
@@ -179,12 +202,27 @@ export default function registerGhostControl(ipcMain: IpcMain) {
 
   ipcMain.handle('set-volume', async (_event, level: number) => {
     try {
+      if (os.platform() === 'linux') {
+        // Linux: use pactl (PulseAudio/PipeWire) or amixer (ALSA)
+        const pct = Math.max(0, Math.min(100, level))
+        // Try PulseAudio/PipeWire first
+        const cmd = `pactl set-sink-volume @DEFAULT_SINK@ ${pct}%`
+        exec(cmd, (error) => {
+          if (error) {
+            // Fallback to amixer (ALSA)
+            exec(`amixer set Master ${pct}%`)
+          }
+        })
+        return `Volume ${level}%`
+      }
+      // macOS / Windows: use loudness
       await loudness.setVolume(level)
       return `Volume ${level}%`
     } catch (e) {
       return 'Error'
     }
   })
+
   ipcMain.handle('take-screenshot', async () => {
     try {
       const filename = `IRIS_Capture_${Date.now()}.png`
