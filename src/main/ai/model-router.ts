@@ -60,7 +60,7 @@ export interface ModelKeys {
   groqKey?: string
   hfKey?: string
   ollamaUrl?: string
-  ollamaModel?: string    // Allow overriding default model
+  ollamaModel?: string // Allow overriding default model
 }
 
 export interface ModelStatus {
@@ -90,7 +90,7 @@ export interface ChatOptions {
   systemPrompt?: string
   messages?: ChatMessage[]
   onSwitch?: (from: string, to: string) => void
-  taskType?: 'chat' | 'code' | 'fast'  // Route to best model for task
+  taskType?: 'chat' | 'code' | 'fast' // Route to best model for task
 }
 
 // ━━━ MODEL DEFINITIONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -101,10 +101,10 @@ interface ModelDef {
   model: string
   maxFreeRPM: number
   tier: number
-  ramMB: number        // RAM needed (0 = cloud)
-  diskGB: number       // Disk needed (0 = cloud)
-  bestFor: string      // What this model is best at
-  localModel?: string  // Ollama model name
+  ramMB: number // RAM needed (0 = cloud)
+  diskGB: number // Disk needed (0 = cloud)
+  bestFor: string // What this model is best at
+  localModel?: string // Ollama model name
 }
 
 /**
@@ -128,27 +128,27 @@ const MODEL_CHAIN: ModelDef[] = [
     model: 'llama-3.1-8b-instant',
     maxFreeRPM: 30,
     tier: 0,
-    ramMB: 0,       // Cloud — zero RAM
+    ramMB: 0, // Cloud — zero RAM
     diskGB: 0,
     bestFor: 'chat, code, research — PRIMARY'
   },
   {
     name: 'Gemini Flash',
     provider: 'google',
-    model: 'gemini-2.5-flash-preview-04-17',
+    model: 'gemini-1.5-flash',
     maxFreeRPM: 15,
     tier: 1,
-    ramMB: 0,       // Cloud — zero RAM
+    ramMB: 0, // Cloud — zero RAM
     diskGB: 0,
     bestFor: 'long context, vision, analysis'
   },
   {
     name: 'Ollama Local',
     provider: 'ollama',
-    model: 'qwen3:4b',           // ← USER PRIMARY — smart + fits 4GB
+    model: 'qwen3:4b', // ← USER PRIMARY — smart + fits 4GB
     maxFreeRPM: 999,
     tier: 2,
-    ramMB: 2600,    // ~2.6 GB
+    ramMB: 2600, // ~2.6 GB
     diskGB: 2.5,
     bestFor: 'OFFLINE hero, primary local model',
     localModel: 'qwen3:4b'
@@ -159,7 +159,7 @@ const MODEL_CHAIN: ModelDef[] = [
     model: 'meta-llama/Llama-3.1-8B-Instruct',
     maxFreeRPM: 10,
     tier: 3,
-    ramMB: 0,       // Cloud — zero RAM
+    ramMB: 0, // Cloud — zero RAM
     diskGB: 0,
     bestFor: 'last resort cloud fallback'
   }
@@ -173,7 +173,7 @@ const CODE_MODELS: Record<string, ModelDef> = {
   ollama: {
     name: 'Ollama Code',
     provider: 'ollama',
-    model: 'stable-code:3b',        // ← Best code model for 4GB
+    model: 'stable-code:3b', // ← Best code model for 4GB
     maxFreeRPM: 999,
     tier: 0,
     ramMB: 2000,
@@ -200,7 +200,7 @@ const CODE_MODELS: Record<string, ModelDef> = {
 const FAST_MODEL: ModelDef = {
   name: 'Ollama Fast',
   provider: 'ollama',
-  model: 'llama3.2:1b',             // ← FASTEST, 0.8GB RAM
+  model: 'llama3.2:1b', // ← FASTEST, 0.8GB RAM
   maxFreeRPM: 999,
   tier: 0,
   ramMB: 800,
@@ -213,23 +213,83 @@ const FAST_MODEL: ModelDef = {
 
 export const RECOMMENDED_MODELS = [
   // ── PRIMARY (user's chosen model) ──
-  { name: 'qwen3:4b',      ram: '2.6 GB', disk: '2.5 GB', cmd: 'ollama pull qwen3:4b',      why: 'PRIMARY — smart, fast, great reasoning' },
+  {
+    name: 'qwen3:4b',
+    ram: '2.6 GB',
+    disk: '2.5 GB',
+    cmd: 'ollama pull qwen3:4b',
+    why: 'PRIMARY — smart, fast, great reasoning'
+  },
   // ── FALLBACKS ──
-  { name: 'qwen2.5:1.5b',     ram: '1.1 GB', disk: '0.9 GB', cmd: 'ollama pull qwen2.5:1.5b',     why: 'Lightweight fallback' },
-  { name: 'llama3.2:1b',      ram: '0.8 GB', disk: '1.2 GB', cmd: 'ollama pull llama3.2:1b',      why: 'Ultra-fast fallback' },
+  {
+    name: 'qwen2.5:1.5b',
+    ram: '1.1 GB',
+    disk: '0.9 GB',
+    cmd: 'ollama pull qwen2.5:1.5b',
+    why: 'Lightweight fallback'
+  },
+  {
+    name: 'llama3.2:1b',
+    ram: '0.8 GB',
+    disk: '1.2 GB',
+    cmd: 'ollama pull llama3.2:1b',
+    why: 'Ultra-fast fallback'
+  },
 
   // ── RECOMMENDED (total +3.2 GB disk, ~2 GB RAM) ──
-  { name: 'stable-code:3b',   ram: '2.0 GB', disk: '1.6 GB', cmd: 'ollama pull stable-code:3b',   why: 'Best code model for 4GB' },
-  { name: 'gemma2:2b',        ram: '1.5 GB', disk: '1.6 GB', cmd: 'ollama pull gemma2:2b',        why: 'Google quality, small size' },
+  {
+    name: 'stable-code:3b',
+    ram: '2.0 GB',
+    disk: '1.6 GB',
+    cmd: 'ollama pull stable-code:3b',
+    why: 'Best code model for 4GB'
+  },
+  {
+    name: 'gemma2:2b',
+    ram: '1.5 GB',
+    disk: '1.6 GB',
+    cmd: 'ollama pull gemma2:2b',
+    why: 'Google quality, small size'
+  },
 
   // ── POWER USER (if you free up RAM) ──
-  { name: 'qwen2.5:3b',       ram: '2.2 GB', disk: '1.9 GB', cmd: 'ollama pull qwen2.5:3b',       why: 'Much smarter, fits 4GB' },
-  { name: 'phi3:mini',         ram: '2.2 GB', disk: '2.4 GB', cmd: 'ollama pull phi3:mini',         why: 'Best reasoning in small size' },
-  { name: 'tinyllama:1.1b',   ram: '0.7 GB', disk: '0.6 GB', cmd: 'ollama pull tinyllama:1.1b',   why: 'Absolute minimum model' },
+  {
+    name: 'qwen2.5:3b',
+    ram: '2.2 GB',
+    disk: '1.9 GB',
+    cmd: 'ollama pull qwen2.5:3b',
+    why: 'Much smarter, fits 4GB'
+  },
+  {
+    name: 'phi3:mini',
+    ram: '2.2 GB',
+    disk: '2.4 GB',
+    cmd: 'ollama pull phi3:mini',
+    why: 'Best reasoning in small size'
+  },
+  {
+    name: 'tinyllama:1.1b',
+    ram: '0.7 GB',
+    disk: '0.6 GB',
+    cmd: 'ollama pull tinyllama:1.1b',
+    why: 'Absolute minimum model'
+  },
 
   // ── BONUS (150GB = space for ALL of these!) ──
-  { name: 'llama3.2:3b',      ram: '2.0 GB', disk: '2.0 GB', cmd: 'ollama pull llama3.2:3b',      why: 'Good balance of speed + smarts' },
-  { name: 'mistral:7b',        ram: '4.0 GB', disk: '4.1 GB', cmd: 'ollama pull mistral:7b',        why: '⚠️ TIGHT FIT — close other apps' },
+  {
+    name: 'llama3.2:3b',
+    ram: '2.0 GB',
+    disk: '2.0 GB',
+    cmd: 'ollama pull llama3.2:3b',
+    why: 'Good balance of speed + smarts'
+  },
+  {
+    name: 'mistral:7b',
+    ram: '4.0 GB',
+    disk: '4.1 GB',
+    cmd: 'ollama pull mistral:7b',
+    why: '⚠️ TIGHT FIT — close other apps'
+  }
 ]
 
 // ━━━ HEALTH STATE (persisted) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -275,7 +335,12 @@ function saveHealthState(): void {
   } catch {}
 }
 
-function updateModelHealth(name: string, success: boolean, latencyMs: number, error?: string): void {
+function updateModelHealth(
+  name: string,
+  success: boolean,
+  latencyMs: number,
+  error?: string
+): void {
   const status = healthState.get(name)
   if (!status) return
   status.requestCount++
@@ -309,7 +374,7 @@ async function callGemini(
   if (opts.systemPrompt) parts.push({ text: opts.systemPrompt })
 
   if (opts.messages && opts.messages.length > 0) {
-    const contents = opts.messages.map(m => ({
+    const contents = opts.messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }))
@@ -367,7 +432,10 @@ async function callGroq(
     ? JSON.parse(choice?.message?.content || '{}')
     : choice?.message?.content || ''
 
-  return { text: typeof text === 'object' ? JSON.stringify(text) : text, tokens: completion.usage?.total_tokens }
+  return {
+    text: typeof text === 'object' ? JSON.stringify(text) : text,
+    tokens: completion.usage?.total_tokens
+  }
 }
 
 async function callHuggingFace(
@@ -393,7 +461,10 @@ async function callHuggingFace(
     temperature: opts.temperature ?? 0.7
   })
 
-  return { text: response.choices?.[0]?.message?.content || '', tokens: response.usage?.total_tokens }
+  return {
+    text: response.choices?.[0]?.message?.content || '',
+    tokens: response.usage?.total_tokens
+  }
 }
 
 async function callOllama(
@@ -438,7 +509,10 @@ export class ModelRouter {
     if (this.initialized) return
     this.initialized = true
     loadHealthState()
-    console.log('[ModelRouter] Chain:', MODEL_CHAIN.map(m => `${m.name}(${m.ramMB}MB)`).join(' → '))
+    console.log(
+      '[ModelRouter] Chain:',
+      MODEL_CHAIN.map((m) => `${m.name}(${m.ramMB}MB)`).join(' → ')
+    )
 
     setInterval(() => {
       this.runHealthChecks().catch(() => {})
@@ -456,7 +530,11 @@ export class ModelRouter {
     let chain: ModelDef[]
     if (opts.taskType === 'code') {
       // For code tasks: try code model first, then general chain
-      chain = [CODE_MODELS.ollama, CODE_MODELS.groq, ...MODEL_CHAIN.filter(m => m.provider !== 'groq')]
+      chain = [
+        CODE_MODELS.ollama,
+        CODE_MODELS.groq,
+        ...MODEL_CHAIN.filter((m) => m.provider !== 'groq')
+      ]
     } else if (opts.taskType === 'fast') {
       // For fast tasks: tiny model first
       chain = [FAST_MODEL, ...MODEL_CHAIN]
@@ -464,15 +542,20 @@ export class ModelRouter {
       chain = MODEL_CHAIN
     }
 
-    const callers = chain.map(def => ({
+    const callers = chain.map((def) => ({
       def,
       fn: () => {
         switch (def.provider) {
-          case 'google': return callGemini(prompt, opts.keys, opts)
-          case 'groq': return callGroq(prompt, opts.keys, opts)
-          case 'huggingface': return callHuggingFace(prompt, opts.keys, opts)
-          case 'ollama': return callOllama(prompt, opts.keys, opts, def.model)
-          default: throw new Error(`Unknown provider: ${def.provider}`)
+          case 'google':
+            return callGemini(prompt, opts.keys, opts)
+          case 'groq':
+            return callGroq(prompt, opts.keys, opts)
+          case 'huggingface':
+            return callHuggingFace(prompt, opts.keys, opts)
+          case 'ollama':
+            return callOllama(prompt, opts.keys, opts, def.model)
+          default:
+            throw new Error(`Unknown provider: ${def.provider}`)
         }
       }
     }))
@@ -511,7 +594,7 @@ export class ModelRouter {
         console.warn(`[ModelRouter] ✗ ${def.name} failed: ${lastError}`)
 
         if (opts.onSwitch) {
-          const nextIdx = callers.findIndex(c => c.def.name === def.name) + 1
+          const nextIdx = callers.findIndex((c) => c.def.name === def.name) + 1
           opts.onSwitch(def.name, callers[nextIdx]?.def?.name || 'none')
         }
         continue
@@ -534,15 +617,24 @@ export class ModelRouter {
   ): Promise<ModelResponse> {
     this.init()
     const start = Date.now()
-    const def = MODEL_CHAIN.find(m => m.provider === provider) || MODEL_CHAIN[0]
+    const def = MODEL_CHAIN.find((m) => m.provider === provider) || MODEL_CHAIN[0]
 
     let result: { text: string; tokens?: number }
     switch (provider) {
-      case 'google': result = await callGemini(prompt, opts.keys, opts); break
-      case 'groq': result = await callGroq(prompt, opts.keys, opts); break
-      case 'huggingface': result = await callHuggingFace(prompt, opts.keys, opts); break
-      case 'ollama': result = await callOllama(prompt, opts.keys, opts); break
-      default: throw new Error(`Unknown provider: ${provider}`)
+      case 'google':
+        result = await callGemini(prompt, opts.keys, opts)
+        break
+      case 'groq':
+        result = await callGroq(prompt, opts.keys, opts)
+        break
+      case 'huggingface':
+        result = await callHuggingFace(prompt, opts.keys, opts)
+        break
+      case 'ollama':
+        result = await callOllama(prompt, opts.keys, opts)
+        break
+      default:
+        throw new Error(`Unknown provider: ${provider}`)
     }
 
     const latency = Date.now() - start
@@ -560,7 +652,7 @@ export class ModelRouter {
 
   static getStatus(): ModelStatus[] {
     this.init()
-    return MODEL_CHAIN.map(def => healthState.get(def.name)!).filter(Boolean)
+    return MODEL_CHAIN.map((def) => healthState.get(def.name)!).filter(Boolean)
   }
 
   static resetModel(name: string): void {
@@ -578,9 +670,13 @@ export class ModelRouter {
     for (const def of MODEL_CHAIN) this.resetModel(def.name)
   }
 
-  static getChain(): ModelDef[] { return [...MODEL_CHAIN] }
+  static getChain(): ModelDef[] {
+    return [...MODEL_CHAIN]
+  }
 
-  static getRecommendedModels(): typeof RECOMMENDED_MODELS { return RECOMMENDED_MODELS }
+  static getRecommendedModels(): typeof RECOMMENDED_MODELS {
+    return RECOMMENDED_MODELS
+  }
 
   static getActiveModel(): string {
     this.init()
@@ -631,9 +727,9 @@ export class ModelRouter {
       const StoreClass = (Store as any).default || Store
       const store = new StoreClass()
       return {
-        geminiKey: store.get('geminiKey', '') as string,
-        groqKey: store.get('groqKey', '') as string,
-        hfKey: store.get('hfKey', '') as string,
+        geminiKey: store.get('iris_custom_api_key', '') as string,
+        groqKey: store.get('iris_groq_api_key', '') as string,
+        hfKey: store.get('iris_hf_api_key', '') as string,
         ollamaUrl: 'http://localhost:11434'
       }
     } catch {
@@ -681,10 +777,20 @@ export default function registerModelRouter(): void {
   ipcMain.handle('model-router:status', () => ModelRouter.getStatus())
   ipcMain.handle('model-router:chain', () => ModelRouter.getChain())
   ipcMain.handle('model-router:active', () => ModelRouter.getActiveModel())
-  ipcMain.handle('model-router:reset', (_, name) => { ModelRouter.resetModel(name); return { success: true } })
-  ipcMain.handle('model-router:reset-all', () => { ModelRouter.resetAll(); return { success: true } })
-  ipcMain.handle('model-router:health-check', async (_, keys) => ModelRouter.runHealthChecksWithKeys(keys))
-  ipcMain.handle('model-router:chat', async (_, prompt, keys, opts?) => ModelRouter.chat(prompt, { keys, ...opts }))
+  ipcMain.handle('model-router:reset', (_, name) => {
+    ModelRouter.resetModel(name)
+    return { success: true }
+  })
+  ipcMain.handle('model-router:reset-all', () => {
+    ModelRouter.resetAll()
+    return { success: true }
+  })
+  ipcMain.handle('model-router:health-check', async (_, keys) =>
+    ModelRouter.runHealthChecksWithKeys(keys)
+  )
+  ipcMain.handle('model-router:chat', async (_, prompt, keys, opts?) =>
+    ModelRouter.chat(prompt, { keys, ...opts })
+  )
   ipcMain.handle('model-router:recommended', () => ModelRouter.getRecommendedModels())
 
   console.log('[ModelRouter] IPC registered (4GB RAM optimized)')

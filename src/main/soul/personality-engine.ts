@@ -14,22 +14,19 @@
  *   SNARKY       — "Fixed. You're welcome. Try not to break it again. 😏"
  */
 
-import Store from 'electron-store'
 import { ipcMain, BrowserWindow } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { app } from 'electron'
 
-const StoreClass = (Store as any).default || Store
-const store = new StoreClass()
-
-const localStorage = {
-  getItem: (key: string): string | null => {
-    if (key === 'iris_user_name') return 'Debjeet'
-    return null
-  },
-  setItem: (_: string, __: string): void => {},
-  removeItem: (_: string): void => {}
+let storeInstance: any = null
+function getStore() {
+  if (!storeInstance) {
+    const Store = require('electron-store')
+    const StoreClass = Store.default || Store
+    storeInstance = new StoreClass()
+  }
+  return storeInstance
 }
 
 // ━━━ TYPES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -115,9 +112,9 @@ export class PersonalityEngine {
   static getConfig(): PersonalityConfig {
     if (this.config) return this.config
 
-    const saved = store.get('iris_soul_personality') as Partial<PersonalityConfig> | undefined
-    const customPrompt = (store.get('iris_personality') as string) || ''
-    const userName = localStorage.getItem('iris_user_name') || ''
+    const saved = getStore().get('iris_soul_personality') as Partial<PersonalityConfig> | undefined
+    const customPrompt = (getStore().get('iris_personality') as string) || ''
+    const userName = (getStore().get('iris_user_name') as string) || 'Debjeet'
 
     this.config = {
       level: saved?.level || 'jarvis',
@@ -138,7 +135,7 @@ export class PersonalityEngine {
   static setConfig(updates: Partial<PersonalityConfig>): void {
     const current = this.getConfig()
     this.config = { ...current, ...updates }
-    store.set('iris_soul_personality', {
+    getStore().set('iris_soul_personality', {
       level: this.config.level,
       greetingName: this.config.greetingName,
       humor: this.config.humor,

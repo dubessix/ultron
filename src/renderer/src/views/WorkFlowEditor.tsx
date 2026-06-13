@@ -403,36 +403,36 @@ function Editor() {
   }
 
   return (
-    <div className="flex h-full w-full bg-[#09090b] relative overflow-hidden">
+    <div className="flex h-full w-full bg-iris-bg-primary relative overflow-hidden">
       <div
-        className={`fixed top-14 left-0 h-[calc(100vh-56px)] bg-[#111113] border-r border-[#27272a] p-4 flex flex-col gap-1 transition-all duration-300 ease-in-out z-40 scrollbar-small overflow-auto mt-5 ${isSidebarOpen ? 'w-72 opacity-100' : 'w-0 opacity-0'}`}
+        className={`fixed top-14 left-0 h-[calc(100vh-56px)] bg-iris-bg-secondary border-r border-iris-border-primary p-4 flex flex-col gap-1 transition-all duration-300 ease-in-out z-40 scrollbar-small overflow-auto mt-5 ${isSidebarOpen ? 'w-72 opacity-100' : 'w-0 opacity-0'}`}
       >
         {isSidebarOpen && (
           <>
-            <h2 className="text-[10px] font-black tracking-[0.2em] text-emerald-500 mb-6 flex items-center gap-2 border-b border-[#27272a] pb-2 uppercase">
+            <h2 className="text-[10px] font-black tracking-[0.2em] text-emerald-500 mb-6 flex items-center gap-2 border-b border-iris-border-primary pb-2 uppercase">
               MODULE LIBRARY
             </h2>
 
             {Object.entries(CATEGORIZED_TOOLS).map(([category, tools]) => (
               <div key={category} className="mb-6">
-                <h3 className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase mb-3">
+                <h3 className="text-[10px] font-bold tracking-widest text-iris-text-secondary uppercase mb-3">
                   {category}
                 </h3>
                 <div className="flex flex-col gap-2">
                   {tools.map((tool: any) => (
                     <div
                       key={tool.name}
-                      className="flex items-center gap-3 p-2 bg-[#18181b] border border-[#27272a] rounded-lg cursor-grab hover:border-emerald-500/50 hover:bg-[#27272a]/50 transition-all group"
+                      className="flex items-center gap-3 p-2 bg-iris-bg-tertiary border border-iris-border-primary rounded-lg cursor-grab hover:border-emerald-500/50 hover:bg-iris-bg-hover transition-all group"
                       draggable
                       onDragStart={(e) =>
                         e.dataTransfer.setData('application/reactflow', tool.name)
                       }
                     >
-                      <div className="p-1.5 bg-black rounded shadow-inner border border-white/5">
+                      <div className="p-1.5 bg-iris-bg-input rounded shadow-inner border border-iris-border-primary">
                         {getIcon(tool.name, 14)}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold tracking-widest text-zinc-300 uppercase group-hover:text-white transition-colors">
+                        <span className="text-[10px] font-bold tracking-widest text-iris-text-secondary uppercase group-hover:text-iris-text-primary transition-colors">
                           {tool.name.replace(/_/g, ' ')}
                         </span>
                       </div>
@@ -447,7 +447,7 @@ function Editor() {
 
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-[#111113] border border-[#27272a] border-l-0 p-2 rounded-r-lg text-zinc-600 hover:text-emerald-500 z-50 transition-colors"
+        className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-iris-bg-secondary border border-iris-border-primary border-l-0 p-2 rounded-r-lg text-iris-text-secondary hover:text-emerald-500 z-50 transition-colors"
       >
         {isSidebarOpen ? <RiLayoutColumnLine size={18} /> : <RiLayoutColumnFill size={18} />}
       </button>
@@ -460,7 +460,7 @@ function Editor() {
         <div className="absolute top-4 left-4 z-10 flex items-center gap-3 shadow-2xl">
           <button
             onClick={resetCanvas}
-            className="p-3 rounded-lg bg-[#18181b] border border-[#27272a] text-zinc-600 hover:text-emerald-500 hover:border-emerald-500/50 transition-colors cursor-pointer"
+            className="p-3 rounded-lg bg-iris-bg-tertiary border border-iris-border-primary text-iris-text-secondary hover:text-emerald-500 hover:border-emerald-500/50 transition-colors cursor-pointer"
             data-tooltip-id="global-tooltip"
             data-tooltip-content="Start New Macro"
           >
@@ -473,12 +473,12 @@ function Editor() {
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="bg-[#18181b] border border-[#27272a] px-4 py-2 rounded-lg text-sm text-white outline-none focus:border-emerald-500 font-bold tracking-wide w-64 shadow-inner"
+            className="bg-iris-bg-input border border-iris-border-primary px-4 py-2 rounded-lg text-sm text-iris-text-primary outline-none focus:border-emerald-500 font-bold tracking-wide w-64 shadow-inner"
           />
 
           <button
             onClick={runMacroManually}
-            className="bg-[#18181b] hover:bg-[#27272a] text-emerald-400 px-5 py-2 rounded-lg text-[11px] font-black tracking-widest transition-all border border-[#27272a] hover:border-emerald-500/50 flex items-center gap-2 cursor-pointer shadow-lg"
+            className="bg-iris-bg-tertiary hover:bg-iris-bg-hover text-emerald-400 px-5 py-2 rounded-lg text-[11px] font-black tracking-widest transition-all border border-iris-border-primary hover:border-emerald-500/50 flex items-center gap-2 cursor-pointer shadow-lg"
           >
             <RiPlayFill size={16} /> RUN
           </button>
@@ -498,9 +498,9 @@ function Editor() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
-          className="bg-[#09090b]"
+          className="bg-iris-bg-primary"
         >
-          <Background color="#27272a" gap={20} size={1} />
+          <Background color={theme === 'dark' ? '#27272a' : '#cbd5e1'} gap={20} size={1} />
           <Controls className="react-flow__controls" />
         </ReactFlow>
 

@@ -11,7 +11,7 @@ import {
 import { getAllApps, AppItem } from '@renderer/services/system-info'
 
 const SmartIcon = ({ name }: { name: string }) => {
-  if (!name) return <div className="w-10 h-10 bg-zinc-800 rounded-lg border border-white/5" />
+  if (!name) return <div className="w-10 h-10 bg-iris-bg-tertiary rounded-lg border border-iris-border-primary" />
 
   const lower = name.toLowerCase()
   let icon = <RiTerminalBoxLine size={20} />
@@ -42,7 +42,7 @@ const SmartIcon = ({ name }: { name: string }) => {
 
   return (
     <div
-      className={`w-10 h-10 rounded-lg flex items-center justify-center border border-white/5 ${bg} ${color} shadow-sm group-hover:scale-110 transition-transform`}
+      className={`w-10 h-10 rounded-lg flex items-center justify-center border border-iris-border-primary ${bg} ${color} shadow-sm group-hover:scale-110 transition-transform`}
     >
       {icon}
     </div>
@@ -52,14 +52,14 @@ const SmartIcon = ({ name }: { name: string }) => {
 const AppCard = ({ app }: { app: AppItem }) => (
   <div
     onClick={() => window.electron.ipcRenderer.invoke('open-app', app.name)}
-    className="bg-zinc-950/40 backdrop-blur-xl border border-white/5 rounded-xl p-4 flex items-center gap-4 hover:bg-white/10 hover:border-emerald-500/30 transition-all cursor-pointer group active:scale-95"
+    className="bg-iris-bg-card backdrop-blur-xl border border-iris-border-primary rounded-xl p-4 flex items-center gap-4 hover:bg-iris-bg-hover hover:border-emerald-500/30 transition-all cursor-pointer group active:scale-95"
   >
     <SmartIcon name={app.name} />
     <div className="flex-1 overflow-hidden">
-      <div className="text-xs font-bold text-zinc-200 truncate group-hover:text-emerald-400 transition-colors">
+      <div className="text-xs font-bold text-iris-text-primary truncate group-hover:text-emerald-400 transition-colors">
         {app.name}
       </div>
-      <div className="text-[8px] text-zinc-600 truncate font-mono mt-1 opacity-70 group-hover:opacity-100">
+      <div className="text-[8px] text-iris-text-secondary truncate font-mono mt-1 opacity-70 group-hover:opacity-100">
         INSTALLED
       </div>
     </div>
@@ -108,15 +108,15 @@ const AppsView = () => {
   }, [page, allApps])
 
   return (
-    <div className="flex-1 bg-white/8 p-8 h-full flex flex-col animate-in fade-in zoom-in duration-300">
+    <div className="flex-1 bg-iris-bg-primary p-8 h-full flex flex-col animate-in fade-in zoom-in duration-300">
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
             <RiAppsLine className="text-emerald-400" size={20} />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-zinc-200 tracking-widest">SYSTEM APPLICATIONS</h2>
-            <p className="text-[10px] text-zinc-500 font-mono">INDEXED SOFTWARE LIBRARY</p>
+            <h2 className="text-sm font-bold text-iris-text-primary tracking-widest">SYSTEM APPLICATIONS</h2>
+            <p className="text-[10px] text-iris-text-secondary font-mono">INDEXED SOFTWARE LIBRARY</p>
           </div>
         </div>
         <div className="text-xs font-mono text-emerald-500 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/20">
@@ -141,13 +141,13 @@ const AppsView = () => {
           })}
 
           {loading && (
-            <div className="text-zinc-500 text-xs p-4 text-center col-span-full">
+            <div className="text-red-500 text-xs p-4 text-center col-span-full">
               Scanning System...
             </div>
           )}
 
           {!loading && visibleApps.length === 0 && (
-            <div className="text-zinc-500 text-xs p-10 text-center col-span-full">
+            <div className="text-red-500 text-xs p-10 text-center col-span-full">
               No Apps Found.
             </div>
           )}

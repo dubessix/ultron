@@ -1,5 +1,37 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-iris-bg-primary: var(--iris-bg-primary);
+  --color-iris-bg-secondary: var(--iris-bg-secondary);
+  --color-iris-bg-tertiary: var(--iris-bg-tertiary);
+  --color-iris-bg-card: var(--iris-bg-card);
+  --color-iris-bg-hover: var(--iris-bg-hover);
+  --color-iris-bg-bar: var(--iris-bg-bar);
+  --color-iris-bg-input: var(--iris-bg-input);
+  --color-iris-bg-metric: var(--iris-bg-metric);
+
+  --color-iris-border-primary: var(--iris-border-primary);
+  --color-iris-border-hover: var(--iris-border-hover);
+  --color-iris-border-accent: var(--iris-border-accent);
+  --color-iris-border-glow: var(--iris-border-glow);
+
+  --color-iris-text-primary: var(--iris-text-primary);
+  --color-iris-text-secondary: var(--iris-text-secondary);
+  --color-iris-text-muted: var(--iris-text-muted);
+  --color-iris-text-dim: var(--iris-text-dim);
+  --color-iris-text-label: var(--iris-text-label);
+
+  --color-iris-accent: var(--iris-accent);
+  --color-iris-accent-light: var(--iris-accent-light);
+  --color-iris-accent-bg: var(--iris-accent-bg);
+  --color-iris-accent-glow: var(--iris-accent-glow);
+
+  --color-iris-cyan: var(--iris-cyan);
+  --color-iris-orange: var(--iris-orange);
+  --color-iris-purple: var(--iris-purple);
+  --color-iris-red: var(--iris-red);
+}
+
 html,
 body {
   height: 100%;
@@ -13,11 +45,11 @@ body {
   --iris-bg-primary: #000000;
   --iris-bg-secondary: #09090b;
   --iris-bg-tertiary: #18181b;
-  --iris-bg-card: rgba(9, 9, 11, 0.4);
+  --iris-bg-card: rgba(236, 236, 236, 0.4);
   --iris-bg-hover: rgba(255, 255, 255, 0.05);
-  --iris-bg-bar: rgba(9, 9, 11, 0.8);
-  --iris-bg-input: rgba(0, 0, 0, 0.4);
-  --iris-bg-metric: rgba(0, 0, 0, 0.6);
+  --iris-bg-bar: rgba(255, 255, 255, 0.8);
+  --iris-bg-input: rgba(255, 238, 238, 0.4);
+  --iris-bg-metric: rgba(253, 253, 253, 0.6);
 
   --iris-border-primary: rgba(255, 255, 255, 0.05);
   --iris-border-hover: rgba(255, 255, 255, 0.1);

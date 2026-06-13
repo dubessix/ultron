@@ -167,11 +167,13 @@ export class BrainRouter {
 
 export default function registerBrainRouter(): void {
   // Get full brain context
+  ipcMain.removeHandler('brain:context')
   ipcMain.handle('brain:context', (_, action: string) => {
     return BrainRouter.getContext(action)
   })
 
   // Record an interaction
+  ipcMain.removeHandler('brain:record-action')
   ipcMain.handle(
     'brain:record-action',
     (_, action: string, source: string, outcome: string, extra?: any) => {
@@ -181,6 +183,7 @@ export default function registerBrainRouter(): void {
   )
 
   // Learn a fact
+  ipcMain.removeHandler('brain:learn')
   ipcMain.handle(
     'brain:learn',
     (_, category: string, key: string, value: string, source?: string) => {
@@ -190,6 +193,7 @@ export default function registerBrainRouter(): void {
   )
 
   // Get brain stats
+  ipcMain.removeHandler('brain-router:stats')
   ipcMain.handle('brain-router:stats', () => {
     const episodicStats = EpisodicMemory.getStats()
     const semanticStats = SemanticMemory.getStats()

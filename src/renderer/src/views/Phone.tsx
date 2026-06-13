@@ -170,13 +170,13 @@ const PhoneView = ({ glassPanel }: { glassPanel?: string }) => {
 
   if (status !== 'connected' && uiMode === 'history') {
     return (
-      <div className="flex-1 flex flex-col items-center justify-start pt-16 p-10 animate-in fade-in duration-300 bg-[#050505] min-h-screen text-emerald-50 relative overflow-y-auto scrollbar-small pb-24">
+      <div className="flex-1 flex flex-col items-center justify-start pt-16 p-10 animate-in fade-in duration-300 bg-iris-bg-primary min-h-screen text-iris-text-primary relative overflow-y-auto scrollbar-small pb-24">
         <div className="w-full max-w-6xl flex flex-col items-center">
           <div className="flex flex-col items-center text-center mb-16">
             <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 mb-6 inline-block">
               <RiHistoryLine className="text-emerald-400" size={32} />
             </div>
-            <h1 className="text-4xl font-black text-white tracking-[0.2em] uppercase">
+            <h1 className="text-4xl font-black text-iris-text-primary tracking-[0.2em] uppercase">
               NEURAL ARCHIVE
             </h1>
             <p className="text-xs text-emerald-500 font-mono tracking-widest mt-2">
@@ -230,15 +230,15 @@ const PhoneView = ({ glassPanel }: { glassPanel?: string }) => {
 
   if (status !== 'connected' && uiMode === 'manual') {
     return (
-      <div className="flex-1 flex flex-col lg:flex-row items-start justify-center gap-8 p-6 md:p-12 animate-in fade-in duration-300 bg-[#050505] min-h-dvh overflow-y-auto text-emerald-50 pb-24">
+      <div className="flex-1 flex flex-col lg:flex-row items-start justify-center gap-8 p-6 md:p-12 animate-in fade-in duration-300 bg-iris-bg-primary min-h-dvh overflow-y-auto text-iris-text-primary pb-24">
         <div className="w-full lg:w-1/3 max-w-md flex flex-col gap-6 shrink-0">
-          <div className="p-6 bg-black border border-emerald-900/40 rounded-2xl shadow-lg flex items-center justify-between">
+          <div className="p-6 bg-iris-bg-secondary border border-iris-border-primary rounded-2xl shadow-lg flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-400/30">
                 <FaAndroid className="text-emerald-400 text-2xl" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white tracking-wide">Device Uplink</h2>
+                <h2 className="text-lg font-bold text-iris-text-primary tracking-wide">Device Uplink</h2>
                 <p className="text-[10px] text-emerald-400/70 font-mono">TCP/IP CONFIGURATION</p>
               </div>
             </div>
@@ -420,23 +420,23 @@ const PhoneView = ({ glassPanel }: { glassPanel?: string }) => {
   }
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-10 p-10 animate-in fade-in duration-500 bg-[#0a0a0a] min-h-screen overflow-y-auto">
+    <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-10 p-10 animate-in fade-in duration-500 bg-iris-bg-primary min-h-screen overflow-y-auto">
       <div className="w-1/4 flex flex-col">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30">
             <RiSmartphoneLine className="text-purple-400" size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-black text-white tracking-widest uppercase">
+            <h2 className="text-lg font-black text-iris-text-primary tracking-widest uppercase">
               {telemetry.model}
             </h2>
-            <p className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">
+            <p className="text-[10px] text-iris-text-secondary font-mono tracking-widest uppercase">
               {telemetry.os}
             </p>
           </div>
         </div>
 
-        <div className="flex justify-between text-[10px] font-mono text-cyan-500 border-b border-white/5 pb-4 mb-4">
+        <div className="flex justify-between text-[10px] font-mono text-cyan-500 border-b border-iris-border-primary pb-4 mb-4">
           <span>UPTIME: LIVE</span>
           <span className="text-orange-500">TEMP: {telemetry.battery.temp}°C</span>
         </div>
@@ -446,18 +446,18 @@ const PhoneView = ({ glassPanel }: { glassPanel?: string }) => {
         </h3>
 
         <div className="flex flex-col gap-4">
-          <div className="bg-[#111] border border-white/5 rounded-2xl p-5 hover:border-purple-500/30 transition-all">
+          <div className="bg-iris-bg-secondary border border-iris-border-primary rounded-2xl p-5 hover:border-purple-500/30 transition-all">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-[10px] font-bold text-zinc-500 tracking-widest">NETWORK</span>
+              <span className="text-[10px] font-bold text-iris-text-secondary tracking-widest">NETWORK</span>
               <RiSignalWifi3Line className="text-purple-500" />
             </div>
-            <h4 className="text-2xl font-black text-white">ACTIVE</h4>
-            <span className="text-[10px] font-mono text-zinc-500">TCP/IP BRIDGE</span>
+            <h4 className="text-2xl font-black text-iris-text-primary">ACTIVE</h4>
+            <span className="text-[10px] font-mono text-iris-text-secondary">TCP/IP BRIDGE</span>
           </div>
 
-          <div className="bg-[#111] border border-white/5 rounded-2xl p-5 hover:border-purple-500/30 transition-all">
+          <div className="bg-iris-bg-secondary border border-iris-border-primary rounded-2xl p-5 hover:border-purple-500/30 transition-all">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-[10px] font-bold text-zinc-500 tracking-widest">BATTERY</span>
+              <span className="text-[10px] font-bold text-iris-text-secondary tracking-widest">BATTERY</span>
               <RiBattery2ChargeLine className="text-green-500" />
             </div>
             <div className="flex justify-between items-end mb-2">
@@ -474,16 +474,16 @@ const PhoneView = ({ glassPanel }: { glassPanel?: string }) => {
             </div>
           </div>
 
-          <div className="bg-[#111] border border-white/5 rounded-2xl p-5 hover:border-purple-500/30 transition-all">
+          <div className="bg-iris-bg-secondary border border-iris-border-primary rounded-2xl p-5 hover:border-purple-500/30 transition-all">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-[10px] font-bold text-zinc-500 tracking-widest">STORAGE</span>
+              <span className="text-[10px] font-bold text-iris-text-secondary tracking-widest">STORAGE</span>
               <RiDatabase2Line className="text-orange-500" />
             </div>
             <div className="flex justify-between items-end mb-2">
-              <h4 className="text-3xl font-black text-white">{telemetry.storage.used}</h4>
-              <span className="text-[10px] font-mono text-zinc-500">{telemetry.storage.total}</span>
+              <h4 className="text-3xl font-black text-iris-text-primary">{telemetry.storage.used}</h4>
+              <span className="text-[10px] font-mono text-iris-text-secondary">{telemetry.storage.total}</span>
             </div>
-            <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-iris-bg-primary rounded-full h-1.5 overflow-hidden">
               <div
                 className="bg-orange-500 h-1.5 shadow-[0_0_10px_rgba(249,115,22,0.8)]"
                 style={{ width: `${telemetry.storage.percent}%` }}
@@ -505,13 +505,13 @@ const PhoneView = ({ glassPanel }: { glassPanel?: string }) => {
       </div>
 
       <div className="w-1/4 flex flex-col h-162.5 relative">
-        <div className="bg-[#111] border border-white/5 rounded-2xl p-6 flex flex-col h-full shadow-lg">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
+        <div className="bg-iris-bg-secondary border border-iris-border-primary rounded-2xl p-6 flex flex-col h-full shadow-lg">
+          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-iris-border-primary">
             <div className="p-2 bg-purple-500/10 rounded-lg">
               <RiTerminalBoxLine className="text-purple-400" size={20} />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white tracking-widest uppercase">
+              <h3 className="text-xs font-bold text-iris-text-primary tracking-widest uppercase">
                 SYSTEM CONTROLS
               </h3>
               <span className="text-[10px] text-purple-400 font-mono flex items-center gap-1">

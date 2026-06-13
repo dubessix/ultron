@@ -21,15 +21,21 @@
  */
 
 import { ipcMain, app, BrowserWindow } from 'electron'
-import Store from 'electron-store'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import { PersonalityEngine, type GreetingContext } from './personality-engine'
 import { ModelRouter } from '../ai/model-router'
 
-const StoreClass = (Store as any).default || Store
-const store = new StoreClass()
+let storeInstance: any = null
+function getStore() {
+  if (!storeInstance) {
+    const Store = require('electron-store')
+    const StoreClass = Store.default || Store
+    storeInstance = new StoreClass()
+  }
+  return storeInstance
+}
 
 // ━━━ TYPES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -93,11 +99,11 @@ export class SessionRitual {
       dayOfWeek: tc.dayOfWeek,
       isWeekend: tc.isWeekend,
       uptime: 0,
-      isFirstRun: !store.get('iris_soul_first_run_done')
+      isFirstRun: !getStore().get('iris_soul_first_run_done')
     }
 
     if (context.isFirstRun) {
-      store.set('iris_soul_first_run_done', true)
+      getStore().set('iris_soul_first_run_done', true)
     }
 
     const greeting = PersonalityEngine.generateGreeting(context)
@@ -218,7 +224,7 @@ export class SessionRitual {
       yesterday.setDate(yesterday.getDate() - 1)
       const dateStr = yesterday.toISOString().split('T')[0]
 
-      const records = store.get('iris_session_records') as SessionRecord[] | undefined
+      const records = getStore().get('iris_session_records') as SessionRecord[] | undefined
       if (!records?.length) return undefined
 
       const record = records.find(r => r.date === dateStr)
@@ -233,11 +239,11 @@ export class SessionRitual {
 
   private static saveSessionRecord(record: SessionRecord): void {
     try {
-      const existing = (store.get('iris_session_records') as SessionRecord[]) || []
+      const existing = (getStore().get('iris_session_records') as SessionRecord[]) || []
       existing.push(record)
       // Keep last 30 days
       const trimmed = existing.slice(-30)
-      store.set('iris_session_records', trimmed)
+      getStore().set('iris_session_records', trimmed)
     } catch {}
   }
 
@@ -292,7 +298,7 @@ export default function registerSessionRitual(): void {
 
   // Get session history
   ipcMain.handle('soul:session-history', () => {
-    return store.get('iris_session_records') || []
+    return getStore().get('iris_session_records') || []
   })
 
   console.log('[Soul:Ritual] Session rituals registered')

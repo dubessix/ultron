@@ -41,7 +41,8 @@ const TitleBar = () => {
       className="w-full h-14 flex items-center justify-between px-0 backdrop-blur-2xl border-b drag-region select-none z-50 relative"
       style={{
         backgroundColor: 'var(--iris-bg-bar)',
-        borderColor: 'var(--iris-border-primary)'
+        borderColor: 'var(--iris-border-primary)',
+        WebkitAppRegion: 'drag'
       }}
     >
       <div
@@ -51,7 +52,7 @@ const TitleBar = () => {
         }}
       />
 
-      <div className="flex items-center h-full pl-5 pr-3 gap-3 z-50 no-drag">
+      <div className="flex items-center h-full pl-5 pr-3 gap-3 z-50 no-drag" style={{ WebkitAppRegion: 'no-drag' }}>
         {isMac ? (
           <div className="flex items-center gap-2.5">
             <button
@@ -167,7 +168,7 @@ const TitleBar = () => {
         </div>
       </div>
 
-      <div className="flex items-center h-full no-drag z-50">
+      <div className="flex items-center h-full no-drag z-50" style={{ WebkitAppRegion: 'no-drag' }}>
         {/* ─── Theme Toggle ─── */}
         <button
           onClick={toggleTheme}

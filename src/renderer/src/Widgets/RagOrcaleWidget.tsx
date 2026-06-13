@@ -163,7 +163,7 @@ export default function OracleWidget() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="w-full max-w-4xl bg-[#050505] border border-emerald-500/30 rounded-2xl shadow-[0_0_100px_rgba(16,185,129,0.15)] overflow-hidden flex flex-col relative"
+          className="w-full max-w-4xl bg-iris-bg-primary border border-emerald-500/30 rounded-2xl shadow-[0_0_100px_rgba(16,185,129,0.15)] overflow-hidden flex flex-col relative"
         >
           <motion.div
             className={`absolute top-0 left-0 h-0.5 z-10 transition-colors ${status === 'cancelled' ? 'bg-red-500' : 'bg-emerald-500'}`}
@@ -232,7 +232,7 @@ export default function OracleWidget() {
                   <button
                     onClick={handleStop}
                     disabled={isPaused}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-black tracking-widest transition-all shadow-lg ${isPaused ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]'}`}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-black tracking-widest transition-all shadow-lg ${isPaused ? 'bg-iris-bg-tertiary text-iris-text-muted cursor-not-allowed' : 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]'}`}
                   >
                     <Octagon className="w-4 h-4" />
                     {isPaused ? 'PAUSED' : 'STOP SCAN'}
@@ -262,7 +262,7 @@ export default function OracleWidget() {
                       </motion.span>
                     </div>
                   </div>
-                  <div className="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800 relative">
+                  <div className="w-full h-3 bg-iris-bg-tertiary rounded-full overflow-hidden border border-iris-border-primary relative">
                     <motion.div
                       className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] rounded-full absolute top-0 left-0"
                       initial={{ width: 0 }}
@@ -282,7 +282,7 @@ export default function OracleWidget() {
 
                 <div
                   ref={terminalRef}
-                  className="bg-[#0a0a0a] border border-zinc-800 rounded-xl p-6 h-45 overflow-y-auto relative font-mono text-sm scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent"
+                  className="bg-iris-bg-secondary border border-iris-border-primary rounded-xl p-6 h-45 overflow-y-auto relative font-mono text-sm scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent"
                 >
                   {logStream.map((log, i) => (
                     <motion.div
@@ -367,7 +367,7 @@ const StatBox = ({
   animate = false
 }: any) => (
   <div
-    className={`flex flex-col justify-center p-5 rounded-xl border ${animate ? 'border-emerald-500/20 bg-emerald-500/5' : 'bg-black/40 border-white/5'}`}
+    className={`flex flex-col justify-center p-5 rounded-xl border ${animate ? 'border-emerald-500/20 bg-emerald-500/5' : 'bg-iris-bg-card border-iris-border-primary'}`}
   >
     <div className="flex items-center gap-2 mb-3">
       <Icon className={`w-4 h-4 ${iconColor}`} />

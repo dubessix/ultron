@@ -3,6 +3,13 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {}
 
+const settings = {
+  get: (key: string) => ipcRenderer.invoke('settings:get', key),
+  set: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
+  delete: (key: string) => ipcRenderer.invoke('settings:delete', key),
+  all: () => ipcRenderer.invoke('settings:all')
+}
+
 // Always expose — works in both contextIsolated and non-isolated
 try {
   contextBridge.exposeInMainWorld('electron', {
@@ -21,6 +28,7 @@ try {
       removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel)
     }
   })
+  contextBridge.exposeInMainWorld('settings', settings)
   contextBridge.exposeInMainWorld('api', api)
   console.log('[Preload] ✅ Electron API exposed to renderer')
 } catch (error) {
@@ -36,6 +44,8 @@ try {
       on: ipcRenderer.on.bind(ipcRenderer)
     }
   }
+  // @ts-ignore
+  window.settings = settings
   // @ts-ignore
   window.api = api
 }

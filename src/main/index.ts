@@ -1,3 +1,6 @@
+process.on('unhandledRejection', (reason) => console.error('[UnhandledRejection]', reason))
+process.on('uncaughtException', (err) => console.error('[UncaughtException]', err))
+
 import {
   app,
   shell,
@@ -11,6 +14,15 @@ import {
   systemPreferences,
   dialog
 } from 'electron'
+let storeInstance: any = null
+function getStore() {
+  if (!storeInstance) {
+    const Store = require('electron-store')
+    const StoreClass = Store.default || Store
+    storeInstance = new StoreClass()
+  }
+  return storeInstance
+}
 import path, { join } from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -52,12 +64,12 @@ import registerLockSystem from './security/lock-system'
 import registerTelegramBot from './telegram/telegram-bot'
 import registerModelRouter from './ai/model-router'
 import registerPersonalityEngine from './soul/personality-engine'
-import registerAmbientPresence from './soul/ambient-presence'
-import registerSessionRitual from './soul/session-ritual'
-import registerNoticeEngine from './soul/notice-engine'
-import registerEmotionEngine from './soul/emotion-engine'
-import registerSuggestionEngine from './soul/suggestion-engine'
-import registerPairProgrammer from './soul/pair-programmer'
+import registerAmbientPresence, { AmbientPresence } from './soul/ambient-presence'
+import registerSessionRitual, { SessionRitual } from './soul/session-ritual'
+import registerNoticeEngine, { NoticeEngine } from './soul/notice-engine'
+import registerEmotionEngine, { EmotionEngine } from './soul/emotion-engine'
+import registerSuggestionEngine, { SuggestionEngine } from './soul/suggestion-engine'
+import registerPairProgrammer, { PairProgrammer } from './soul/pair-programmer'
 import registerEpisodicMemory from './brain/episodic-memory'
 import registerSemanticMemory from './brain/semantic-memory'
 import registerBrainRouter from './brain/brain-router'
@@ -67,8 +79,8 @@ import registerCodingAnalytics from './coding/coding-analytics'
 import registerCommandPalette from './coding/command-palette'
 import registerVSCodeBridge from './coding/vscode-bridge'
 import Orchestrator from './agents/orchestrator'
-import registerProceduralMemory from './brain/procedural-memory'
-import registerSharedConsciousness from './brain/shared-consciousness'
+import registerProceduralMemory, { ProceduralMemory } from './brain/procedural-memory'
+import registerSharedConsciousness, { SharedConsciousness } from './brain/shared-consciousness'
 import { autoUpdater } from 'electron-updater'
 
 app.commandLine.appendSwitch('use-fake-ui-for-media-stream')
@@ -77,6 +89,11 @@ app.commandLine.appendSwitch('use-fake-ui-for-media-stream')
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox')
   app.commandLine.appendSwitch('disable-gpu-sandbox')
+  app.commandLine.appendSwitch('ignore-gpu-blacklist')
+  app.commandLine.appendSwitch('ignore-gpu-blocklist')
+  app.commandLine.appendSwitch('enable-gpu-rasterization')
+  app.commandLine.appendSwitch('enable-webgl')
+  app.commandLine.appendSwitch('enable-webgl2')
   // Wayland support
   if (process.env.XDG_SESSION_TYPE === 'wayland') {
     app.commandLine.appendSwitch('ozone-platform', 'wayland')
@@ -105,12 +122,17 @@ const secureConfigPath = join(app.getPath('userData'), 'iris_secure_vault.json')
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
-    height: 720, 
-    show: false,
-    fullscreen: true,
+    height: 800, 
+    minWidth: 800,
+    minHeight: 500,
+    show: true,
+    resizable: true,
+    maximizable: true,
+    minimizable: true,
     autoHideMenuBar: false,
-    frame: false,
-    transparent: true,
+    frame: true,
+    transparent: false,
+    backgroundColor: '#000000',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -125,6 +147,14 @@ function createWindow(): void {
       // Small delay to let renderer paint first frame (anti-flash)
       setTimeout(() => mainWindow!.show(), 100)
     }
+  })
+
+  mainWindow.on('maximize', () => {
+    mainWindow?.webContents.send('window-state', true)
+  })
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow?.webContents.send('window-state', false)
   })
 
   ipcMain.on('window-min', () => mainWindow?.minimize())
@@ -224,6 +254,9 @@ app.whenReady().then(() => {
         })
       })
   })
+  ipcMain.handle('get-app-version', () => {
+  return app.getVersion()
+})
 
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     const allowedPermissions = [
@@ -261,6 +294,28 @@ app.whenReady().then(() => {
       systemPreferences.askForMediaAccess('camera')
     }
   }
+
+  ipcMain.removeHandler('settings:get')
+  ipcMain.handle('settings:get', (_, key: string) => {
+    return getStore().get(key)
+  })
+
+  ipcMain.removeHandler('settings:set')
+  ipcMain.handle('settings:set', (_, key: string, value: any) => {
+    getStore().set(key, value)
+    return { success: true }
+  })
+
+  ipcMain.removeHandler('settings:delete')
+  ipcMain.handle('settings:delete', (_, key: string) => {
+    getStore().delete(key)
+    return { success: true }
+  })
+
+  ipcMain.removeHandler('settings:all')
+  ipcMain.handle('settings:all', () => {
+    return getStore().store
+  })
 
   ipcMain.handle('secure-save-keys', async (_, { groqKey, geminiKey }) => {
     try {
@@ -395,33 +450,20 @@ app.whenReady().then(() => {
 
   // ── Initialize IRIS Soul ──
   if (mainWindow) {
-    const { AmbientPresence } = require('./soul/ambient-presence')
     AmbientPresence.init(mainWindow)
-
-    const { NoticeEngine } = require('./soul/notice-engine')
     NoticeEngine.init(mainWindow)
-
-    const { EmotionEngine } = require('./soul/emotion-engine')
     EmotionEngine.init(mainWindow)
-
-    const { SuggestionEngine } = require('./soul/suggestion-engine')
     SuggestionEngine.init(mainWindow)
-
-    const { PairProgrammer } = require('./soul/pair-programmer')
     PairProgrammer.init(mainWindow)
-
     Orchestrator.init(mainWindow)
 
     // ── Initialize Procedural Memory (task checker) ──
-    const { ProceduralMemory } = require('./brain/procedural-memory')
     ProceduralMemory.startChecker(mainWindow)
 
     // ── Initialize Shared Consciousness ──
-    const { SharedConsciousness } = require('./brain/shared-consciousness')
     SharedConsciousness.init(mainWindow)
 
     // Perform start ritual and send to renderer
-    const { SessionRitual } = require('./soul/session-ritual')
     SessionRitual.performStartRitual().then((ritual: any) => {
       mainWindow.webContents.send('soul:start-ritual', ritual)
     })

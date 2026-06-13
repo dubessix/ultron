@@ -98,9 +98,14 @@ const Sphere = () => {
   return (
     <Canvas
       camera={{ position: [0, 0, 4.5] }}
-      dpr={[1, 1.5]}
+      dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 1.5) : 1}
       performance={{ min: 0.5 }}
-      gl={{ antialias: false, powerPreference: 'high-performance' }}
+      gl={{ 
+        antialias: true, 
+        alpha: true,
+        powerPreference: 'default',
+        failIfMajorPerformanceCaveat: false
+      }}
     >
       <ambientLight intensity={0.6} />
       <CustomParticleSphere />

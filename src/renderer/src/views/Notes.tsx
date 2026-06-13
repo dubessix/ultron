@@ -116,16 +116,16 @@ const NotesView = ({ glassPanel }: { glassPanel?: string }) => {
   }
 
   return (
-    <div className="flex-1 bg-white/5 h-full grid grid-cols-12 gap-6 p-6 animate-in fade-in zoom-in duration-300">
+    <div className="flex-1 bg-iris-bg-primary h-full grid grid-cols-12 gap-6 p-6 animate-in fade-in zoom-in duration-300">
       <div className="col-span-4 flex flex-col gap-4 h-full overflow-hidden">
-        <div className="flex items-center justify-between pb-2 border-b border-white/10">
-          <div className="flex items-center gap-2 text-zinc-100">
+        <div className="flex items-center justify-between pb-2 border-b border-iris-border-primary">
+          <div className="flex items-center gap-2 text-iris-text-primary">
             <RiStickyNoteLine className="text-emerald-400" />
             <span className="text-xs font-bold tracking-widest">MEMORY BANK</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-zinc-500 font-mono mr-2">{notes.length} ITEMS</span>
+            <span className="text-[10px] text-iris-text-secondary font-mono mr-2">{notes.length} ITEMS</span>
             <button
               onClick={startCreating}
               className="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-black transition-all"
@@ -153,23 +153,23 @@ const NotesView = ({ glassPanel }: { glassPanel?: string }) => {
                 className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   selectedNote?.filename === note.filename && !isEditorOpen
                     ? 'bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
-                    : 'bg-zinc-900/40 border-white/5 hover:bg-white/5 hover:border-white/10'
+                    : 'bg-iris-bg-secondary border-iris-border-primary hover:bg-iris-bg-hover hover:border-iris-border-hover'
                 }`}
               >
                 <div className="overflow-hidden">
                   <h3
-                    className={`text-xs font-bold truncate ${selectedNote?.filename === note.filename && !isEditorOpen ? 'text-emerald-100' : 'text-zinc-200'}`}
+                    className={`text-xs font-bold truncate ${selectedNote?.filename === note.filename && !isEditorOpen ? 'text-iris-accent' : 'text-iris-text-primary'}`}
                   >
                     {note.title.toUpperCase()}
                   </h3>
-                  <p className="text-[9px] text-zinc-500 mt-1 font-mono">
+                  <p className="text-[9px] text-iris-text-secondary mt-1 font-mono">
                     {new Date(note.createdAt).toLocaleDateString()}
                   </p>
                 </div>
 
                 <button
                   onClick={(e) => deleteNote(note.filename, e)}
-                  className="opacity-0 group-hover:opacity-100 p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-2 text-iris-text-secondary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                 >
                   <RiDeleteBinLine size={14} />
                 </button>
@@ -180,7 +180,7 @@ const NotesView = ({ glassPanel }: { glassPanel?: string }) => {
       </div>
 
       <div
-        className={`col-span-8 ${glassPanel || ''} bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl flex flex-col overflow-hidden relative`}
+        className={`col-span-8 ${glassPanel || ''} bg-iris-bg-card backdrop-blur-xl border border-iris-border-primary rounded-2xl flex flex-col overflow-hidden relative`}
       >
         {isEditorOpen ? (
           <div className="flex-1 flex flex-col p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -241,8 +241,8 @@ const NotesView = ({ glassPanel }: { glassPanel?: string }) => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 scrollbar-small bg-zinc-950/30">
-              <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
+            <div className="flex-1 overflow-y-auto p-8 scrollbar-small bg-iris-bg-tertiary/30">
+              <div className={`prose ${theme === 'dark' ? 'prose-invert' : ''} prose-sm max-w-none text-iris-text-primary`}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents}>
                   {selectedNote.content}
                 </ReactMarkdown>

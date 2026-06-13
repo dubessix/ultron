@@ -137,10 +137,13 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
   const downloadUpdate = () => window.electron.ipcRenderer.invoke('download-update')
   const installUpdate = () => window.electron.ipcRenderer.invoke('install-update')
 
-  const handleVoiceChange = (v: 'MALE' | 'FEMALE') => {
+  const handleVoiceChange = async (v: 'MALE' | 'FEMALE') => {
     if (isSystemActive) return
     setVoice(v)
     localStorage.setItem('iris_voice_profile', v)
+    if (window.settings) {
+      await window.settings.set('iris_voice_profile', v)
+    }
   }
 
   const handlePersonalityChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -159,8 +162,11 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
     }
   }
 
-  const saveUserName = () => {
+  const saveUserName = async () => {
     localStorage.setItem('iris_user_name', userName)
+    if (window.settings) {
+      await window.settings.set('iris_user_name', userName)
+    }
     alert('User Designation Saved.')
   }
 
@@ -169,6 +175,13 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
     localStorage.setItem('iris_groq_api_key', groqKey)
     localStorage.setItem('iris_hf_api_key', hfKey)
     localStorage.setItem('iris_tailvy_api_key', tailvyKey)
+
+    if (window.settings) {
+      await window.settings.set('iris_custom_api_key', geminiKey)
+      await window.settings.set('iris_groq_api_key', groqKey)
+      await window.settings.set('iris_hf_api_key', hfKey)
+      await window.settings.set('iris_tailvy_api_key', tailvyKey)
+    }
 
     if (window.electron?.ipcRenderer) {
       try {
@@ -249,28 +262,28 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
   }
 
   const cardClass =
-    'bg-[#0f0f13] border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col gap-5 hover:border-white/20 transition-all shadow-lg'
+    'bg-iris-bg-secondary border border-iris-border-primary p-6 md:p-8 rounded-2xl flex flex-col gap-5 hover:border-iris-border-hover transition-all shadow-lg'
   const inputContainerClass =
-    'flex items-center border border-white/10 bg-[var(--iris-bg-input)] rounded-lg px-4 py-3 focus-within:border-white/30 focus-within:bg-black transition-all duration-300 w-full'
-  const titleClass = 'text-sm font-semibold text-white flex items-center gap-2'
+    'flex items-center border border-iris-border-primary bg-[var(--iris-bg-input)] rounded-lg px-4 py-3 focus-within:border-iris-accent focus-within:bg-iris-bg-primary transition-all duration-300 w-full'
+  const titleClass = 'text-sm font-semibold text-iris-text-primary flex items-center gap-2'
 
   return (
-    <div className="flex-1 p-6 md:p-10 lg:p-16 flex flex-col items-center bg-black min-h-screen text-zinc-100 overflow-y-auto scrollbar-small">
+    <div className="flex-1 p-6 md:p-10 lg:p-16 flex flex-col items-center bg-iris-bg-primary min-h-screen text-iris-text-primary overflow-y-auto scrollbar-small">
       <motion.div
         className="w-full max-w-4xl flex flex-col gap-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-iris-border-primary pb-6">
           <div className="flex items-center gap-5">
-            <div className="p-4 bg-[#111] rounded-2xl border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.03)]">
-              <GiArtificialIntelligence size={36} className="text-white" />
+            <div className="p-4 bg-iris-bg-secondary rounded-2xl border border-iris-border-primary flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.03)]">
+              <GiArtificialIntelligence size={36} className="text-iris-accent" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Command Center</h2>
-              <p className="text-xs text-zinc-400 font-mono mt-1 tracking-widest flex items-center gap-2 uppercase">
+              <h2 className="text-3xl font-bold tracking-tight text-iris-text-primary">Command Center</h2>
+              <p className="text-xs text-iris-text-secondary font-mono mt-1 tracking-widest flex items-center gap-2 uppercase">
                 <RiRecordCircleLine
-                  className={`${isSystemActive ? 'text-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]' : 'text-zinc-600'}`}
+                  className={`${isSystemActive ? 'text-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]' : 'text-iris-text-muted'}`}
                   size={14}
                 />
                 {isSystemActive ? 'System Online' : 'System Offline'}
@@ -278,34 +291,34 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
             </div>
           </div>
 
-          <div className="flex bg-[#0a0a0c] p-1 rounded-xl border border-white/10 w-full md:w-fit shadow-lg overflow-x-auto scrollbar-none">
+          <div className="flex bg-iris-bg-tertiary p-1 rounded-xl border border-iris-border-primary w-full md:w-fit shadow-lg overflow-x-auto scrollbar-none">
             <button
               onClick={() => setActiveTab('updates')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'updates' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'updates' ? 'bg-iris-bg-secondary text-iris-text-primary shadow-md border border-iris-border-primary/50' : 'text-iris-text-secondary hover:text-iris-text-primary hover:bg-iris-bg-hover'}`}
             >
               <RiTerminalWindowLine size={16} /> SYSTEM
             </button>
             <button
               onClick={() => setActiveTab('general')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'general' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'general' ? 'bg-iris-bg-secondary text-iris-text-primary shadow-md border border-iris-border-primary/50' : 'text-iris-text-secondary hover:text-iris-text-primary hover:bg-iris-bg-hover'}`}
             >
               <RiSettings4Line size={16} /> GENERAL
             </button>
             <button
               onClick={() => setActiveTab('keys')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'keys' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'keys' ? 'bg-iris-bg-secondary text-iris-text-primary shadow-md border border-iris-border-primary/50' : 'text-iris-text-secondary hover:text-iris-text-primary hover:bg-iris-bg-hover'}`}
             >
               <RiPlugLine size={16} /> API KEYS
             </button>
             <button
               onClick={() => setActiveTab('telegram')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'telegram' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'telegram' ? 'bg-iris-bg-secondary text-iris-text-primary shadow-md border border-iris-border-primary/50' : 'text-iris-text-secondary hover:text-iris-text-primary hover:bg-iris-bg-hover'}`}
             >
               <RiRocketLine size={16} /> REMOTE
             </button>
             <button
               onClick={() => setActiveTab('security')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'security' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'security' ? 'bg-iris-bg-secondary text-iris-text-primary shadow-md border border-iris-border-primary/50' : 'text-iris-text-secondary hover:text-iris-text-primary hover:bg-iris-bg-hover'}`}
             >
               <RiShieldKeyholeLine size={16} /> SECURITY
             </button>
@@ -899,6 +912,10 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                         }
                         localStorage.setItem('iris_telegram_token', telegramToken)
                         localStorage.setItem('iris_telegram_chatids', telegramChatIds)
+                        if (window.settings) {
+                          await window.settings.set('iris_telegram_token', telegramToken)
+                          await window.settings.set('iris_telegram_chatids', telegramChatIds)
+                        }
 
                         const geminiKey = localStorage.getItem('iris_custom_api_key') || ''
                         const groqKey = localStorage.getItem('iris_groq_api_key') || ''

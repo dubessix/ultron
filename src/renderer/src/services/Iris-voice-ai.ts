@@ -1728,11 +1728,13 @@ ${JSON.stringify(history)}
     source.buffer = buffer
 
     source.connect(this.analyser)
-    this.analyser.connect(this.audioContext.destination)
 
     // Route AI audio output to speakers (not Bluetooth headphones)
-    // setSinkId lets us pick which device plays the audio
-    this.routeOutputToSpeakers(source)
+    if ((this as any)._speakerRoutingFailed) {
+      this.analyser.connect(this.audioContext.destination)
+    } else {
+      this.routeOutputToSpeakers(source)
+    }
 
     const currentTime = this.audioContext.currentTime
     if (this.nextStartTime < currentTime) this.nextStartTime = currentTime + 0.02
@@ -1752,38 +1754,47 @@ ${JSON.stringify(history)}
    */
   private async routeOutputToSpeakers(_source: AudioBufferSourceNode): Promise<void> {
     try {
-      // Chromium supports setSinkId on AudioContext via MediaStream destination
-      // We create a hidden audio element to control output routing
       if (!(this as any)._outputAudioEl) {
-        const dest = this.audioContext!.createMediaStreamDestination()
-        this.analyser!.connect(dest)
-
-        const audioEl = document.createElement('audio')
-        audioEl.srcObject = dest.stream
-        audioEl.volume = 1
-        ;(this as any)._outputAudioEl = audioEl
-
         // Try to find speaker device (non-Bluetooth)
         const devices = await navigator.mediaDevices.enumerateDevices()
         const outputs = devices.filter(d => d.kind === 'audiooutput')
         const btKeywords = ['bt', 'bluetooth', 'headset', 'headphone', 'airpods']
         
+        let speakerDev = null
         for (const dev of outputs) {
           const label = (dev.label || '').toLowerCase()
           if (label && !btKeywords.some(kw => label.includes(kw))) {
-            if (typeof (audioEl as any).setSinkId === 'function') {
-              await (audioEl as any).setSinkId(dev.deviceId)
-              console.log(`[IRIS] AI output routed to speaker: ${dev.label}`)
-            }
+            speakerDev = dev
             break
           }
         }
 
-        await audioEl.play()
+        if (speakerDev) {
+          const dest = this.audioContext!.createMediaStreamDestination()
+          this.analyser!.connect(dest)
+
+          const audioEl = document.createElement('audio')
+          audioEl.srcObject = dest.stream
+          audioEl.volume = 1
+
+          if (typeof (audioEl as any).setSinkId === 'function') {
+            await (audioEl as any).setSinkId(speakerDev.deviceId)
+            console.log(`[IRIS] AI output routed to speaker: ${speakerDev.label}`)
+            ;(this as any)._outputAudioEl = audioEl
+            await audioEl.play()
+          } else {
+            throw new Error('setSinkId not supported')
+          }
+        } else {
+          throw new Error('No non-Bluetooth speaker found')
+        }
       }
     } catch (e) {
-      // setSinkId not supported or no speaker found — audio goes to default
-      console.warn('[IRIS] Could not route output to speakers:', e)
+      console.warn('[IRIS] Could not route output to speakers, falling back to default destination:', e)
+      ;(this as any)._speakerRoutingFailed = true
+      try {
+        this.analyser!.connect(this.audioContext!.destination)
+      } catch {}
     }
   }
 

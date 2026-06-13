@@ -22,11 +22,17 @@
  */
 
 import { ipcMain, BrowserWindow, app } from 'electron'
-import Store from 'electron-store'
 import { PersonalityEngine } from './personality-engine'
 
-const StoreClass = (Store as any).default || Store
-const store = new StoreClass()
+let storeInstance: any = null
+function getStore() {
+  if (!storeInstance) {
+    const Store = require('electron-store')
+    const StoreClass = Store.default || Store
+    storeInstance = new StoreClass()
+  }
+  return storeInstance
+}
 
 // ━━━ TYPES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -169,7 +175,7 @@ export class EmotionEngine {
 
     // Load last known emotion
     try {
-      const saved = store.get('iris_emotion_state') as EmotionState | undefined
+      const saved = getStore().get('iris_emotion_state') as EmotionState | undefined
       if (saved) this.currentEmotion = saved
     } catch {}
 
@@ -202,7 +208,7 @@ export class EmotionEngine {
     }
 
     // Persist
-    store.set('iris_emotion_state', emotion)
+    getStore().set('iris_emotion_state', emotion)
 
     // Notify renderer
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {

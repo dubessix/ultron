@@ -60,19 +60,19 @@ export default function StockWidget() {
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative w-full max-w-3xl bg-zinc-950 border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+        className="relative w-full max-w-3xl bg-iris-bg-primary border border-iris-border-primary rounded-3xl overflow-hidden shadow-2xl flex flex-col"
       >
-        <div className="flex items-center justify-between p-6 border-b border-white/5">
+        <div className="flex items-center justify-between p-6 border-b border-iris-border-primary">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+            <div className="p-3 bg-iris-bg-secondary rounded-xl border border-iris-border-primary">
               {stock.isComparison ? (
-                <RiScales3Line className="text-zinc-400" size={24} />
+                <RiScales3Line className="text-iris-text-secondary" size={24} />
               ) : (
-                <RiLineChartLine className="text-zinc-400" size={24} />
+                <RiLineChartLine className="text-iris-text-secondary" size={24} />
               )}
             </div>
             <div>
-              <h2 className="text-2xl font-black tracking-widest text-white uppercase font-mono">
+              <h2 className="text-2xl font-black tracking-widest text-iris-text-primary uppercase font-mono">
                 {stock.isComparison ? `${stock.symbol1} vs ${stock.symbol2}` : stock.symbol1}
               </h2>
               <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase tracking-widest">

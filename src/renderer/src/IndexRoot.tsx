@@ -25,6 +25,35 @@ const IndexRoot = () => {
   useEffect(() => {
     const saved = localStorage.getItem('iris_theme') || 'dark'
     document.documentElement.setAttribute('data-theme', saved)
+
+    // ─── Migrate localStorage to electron-store if needed ───
+    const migrateSettings = async () => {
+      if (window.settings) {
+        const keysToMigrate = [
+          'iris_custom_api_key',
+          'iris_groq_api_key',
+          'iris_hf_api_key',
+          'iris_tailvy_api_key',
+          'iris_telegram_token',
+          'iris_telegram_chatids',
+          'iris_user_name',
+          'iris_voice_profile',
+          'iris_adb_ip',
+          'iris_adb_port',
+          'iris_theme'
+        ]
+        for (const key of keysToMigrate) {
+          const localValue = localStorage.getItem(key)
+          if (localValue !== null) {
+            const storeValue = await window.settings.get(key)
+            if (storeValue === undefined || storeValue === null) {
+              await window.settings.set(key, localValue)
+            }
+          }
+        }
+      }
+    }
+    migrateSettings()
   }, [])
 
   const [isOverlay, setIsOverlay] = useState(false)

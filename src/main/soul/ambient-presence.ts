@@ -19,14 +19,21 @@
  */
 
 import { ipcMain, BrowserWindow, app } from 'electron'
-import Store from 'electron-store'
 import os from 'os'
 import { execSync } from 'child_process'
 import { PersonalityEngine } from './personality-engine'
+import { EpisodicMemory } from '../brain/episodic-memory'
 import { ModelRouter } from '../ai/model-router'
 
-const StoreClass = (Store as any).default || Store
-const store = new StoreClass()
+let storeInstance: any = null
+function getStore() {
+  if (!storeInstance) {
+    const Store = require('electron-store')
+    const StoreClass = Store.default || Store
+    storeInstance = new StoreClass()
+  }
+  return storeInstance
+}
 
 // ━━━ TYPES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -63,7 +70,7 @@ export class AmbientPresence {
   static init(window: BrowserWindow): void {
     this.mainWindow = window
 
-    const saved = store.get('iris_soul_ambient') as Partial<AmbientState> | undefined
+    const saved = getStore().get('iris_soul_ambient') as Partial<AmbientState> | undefined
     const now = Date.now()
 
     this.state = {
@@ -135,7 +142,6 @@ export class AmbientPresence {
    */
   private static cleanupMemory(): void {
     try {
-      const { EpisodicMemory } = require('../brain/episodic-memory')
       const stats = EpisodicMemory.getStats()
       // If episodic memory > 5000 events, trim to 3000
       if (stats.total > 5000) {
@@ -378,7 +384,7 @@ export class AmbientPresence {
   }
 
   private static persist(): void {
-    store.set('iris_soul_ambient', {
+    getStore().set('iris_soul_ambient', {
       mode: this.state?.mode
     })
   }

@@ -455,26 +455,32 @@ export class EpisodicMemory {
 export default function registerEpisodicMemory(): void {
   EpisodicMemory.init()
 
+  ipcMain.removeHandler('brain:record')
   ipcMain.handle('brain:record', (_, event: any) => {
     return EpisodicMemory.record(event)
   })
 
+  ipcMain.removeHandler('brain:query')
   ipcMain.handle('brain:query', (_, query: EpisodicQuery) => {
     return EpisodicMemory.query(query)
   })
 
+  ipcMain.removeHandler('brain:recall')
   ipcMain.handle('brain:recall', (_, context: string, limit?: number) => {
     return EpisodicMemory.recall(context, limit)
   })
 
+  ipcMain.removeHandler('brain:recall-context')
   ipcMain.handle('brain:recall-context', (_, action: string) => {
     return EpisodicMemory.buildRecallContext(action)
   })
 
+  ipcMain.removeHandler('brain:patterns')
   ipcMain.handle('brain:patterns', () => {
     return EpisodicMemory.getPatterns()
   })
 
+  ipcMain.removeHandler('brain:stats')
   ipcMain.handle('brain:stats', () => {
     return EpisodicMemory.getStats()
   })

@@ -63,13 +63,13 @@ export default function EmailWidget() {
 
   return (
     <div className="fixed inset-0 z-9050 flex items-center justify-center bg-black/90 backdrop-blur-md p-10 animate-in fade-in zoom-in duration-300">
-      <div className="relative w-full max-w-5xl h-[85vh] border-2 border-emerald-500/50 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(16,185,129,0.15)] bg-zinc-950 flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-white/5 bg-black/50 shrink-0 z-10">
+      <div className="relative w-full max-w-5xl h-[85vh] border-2 border-emerald-500/50 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(16,185,129,0.15)] bg-iris-bg-primary flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-iris-border-primary bg-iris-bg-secondary shrink-0 z-10">
           <div className="flex items-center gap-4">
             {selectedEmail ? (
               <button
                 onClick={() => setSelectedEmail(null)}
-                className="p-3 bg-white/5 hover:bg-emerald-500/20 text-zinc-400 hover:text-emerald-400 rounded-xl transition-all"
+                className="p-3 bg-iris-bg-hover hover:bg-emerald-500/20 text-iris-text-secondary hover:text-emerald-400 rounded-xl transition-all"
               >
                 <RiArrowLeftLine size={24} />
               </button>
@@ -80,7 +80,7 @@ export default function EmailWidget() {
             )}
 
             <div>
-              <h2 className="text-sm font-bold tracking-[0.2em] text-zinc-200">
+              <h2 className="text-sm font-bold tracking-[0.2em] text-iris-text-primary">
                 {selectedEmail ? 'SECURE MESSAGE VIEW' : 'SECURE INBOX LINK'}
               </h2>
               <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase">
@@ -119,7 +119,7 @@ export default function EmailWidget() {
                       <div
                         key={email.id}
                         onClick={() => setSelectedEmail(email)}
-                        className="group p-5 bg-white-[0.02] hover:bg-white-[0.05] border border-white/5 hover:border-emerald-500/30 rounded-2xl transition-all cursor-pointer relative overflow-hidden"
+                        className="group p-5 bg-iris-bg-secondary hover:bg-iris-bg-hover border border-iris-border-primary hover:border-emerald-500/30 rounded-2xl transition-all cursor-pointer relative overflow-hidden"
                       >
                         <div className="absolute inset-0 bg-linear-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -151,10 +151,10 @@ export default function EmailWidget() {
                           </div>
 
                           <div>
-                            <h3 className="text-zinc-200 font-bold text-base mb-1 group-hover:text-white transition-colors truncate">
+                            <h3 className="text-iris-text-primary font-bold text-base mb-1 group-hover:text-iris-accent transition-colors truncate">
                               {email.subject}
                             </h3>
-                            <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">
+                            <p className="text-iris-text-secondary text-sm line-clamp-2 leading-relaxed">
                               {email.preview}
                             </p>
                           </div>
@@ -172,37 +172,37 @@ export default function EmailWidget() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="absolute inset-0 flex flex-col bg-zinc-900/50"
+                className="absolute inset-0 flex flex-col bg-iris-bg-primary"
               >
-                <div className="p-6 border-b border-white/5 shrink-0 bg-black/20">
-                  <h1 className="text-2xl font-bold text-white mb-4">{selectedEmail.subject}</h1>
+                <div className="p-6 border-b border-iris-border-primary shrink-0 bg-iris-bg-secondary">
+                  <h1 className="text-2xl font-bold text-iris-text-primary mb-4">{selectedEmail.subject}</h1>
 
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-1">
-                      <span className="text-sm text-zinc-300">
-                        <span className="text-zinc-500">From:</span> {selectedEmail.from}
+                      <span className="text-sm text-iris-text-secondary">
+                        <span className="text-iris-text-muted">From:</span> {selectedEmail.from}
                       </span>
-                      <span className="text-xs text-zinc-500 font-mono">
+                      <span className="text-xs text-iris-text-muted font-mono">
                         {new Date(selectedEmail.date).toLocaleString()}
                       </span>
                     </div>
                   </div>
 
                   {selectedEmail.attachments.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-white/5 flex flex-wrap gap-3">
+                    <div className="mt-6 pt-4 border-t border-iris-border-primary flex flex-wrap gap-3">
                       {selectedEmail.attachments.map((file, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2.5 rounded-lg hover:border-emerald-500/50 transition-colors cursor-default"
+                          className="flex items-center gap-3 bg-iris-bg-tertiary border border-iris-border-primary px-4 py-2.5 rounded-lg hover:border-emerald-500/50 transition-colors cursor-default"
                         >
                           <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-md">
                             <RiAttachment2 size={16} />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs text-zinc-200 font-bold max-w-37.5 truncate">
+                            <span className="text-xs text-iris-text-primary font-bold max-w-37.5 truncate">
                               {file.filename}
                             </span>
-                            <span className="text-[10px] text-zinc-500 font-mono uppercase">
+                            <span className="text-[10px] text-iris-text-secondary font-mono uppercase">
                               {formatBytes(file.size)}
                             </span>
                           </div>

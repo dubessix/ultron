@@ -15,6 +15,8 @@ import { PersonalityEngine } from '../soul/personality-engine'
 import { BrainRouter } from '../brain/brain-router'
 import { NoticeEngine } from '../soul/notice-engine'
 import { EmotionEngine } from '../soul/emotion-engine'
+import { SuggestionEngine } from '../soul/suggestion-engine'
+import { PairProgrammer } from '../soul/pair-programmer'
 import Orchestrator, { classifyIntent } from '../agents/orchestrator'
 import type { SubAgent } from '../agents/orchestrator'
 import { EpisodicMemory } from '../brain/episodic-memory'
@@ -27,18 +29,17 @@ import os from 'os'
 import screenshot from 'screenshot-desktop'
 import util from 'util'
 
-const execAsync = util.promisify(exec)
-const localStorage = {
-  getItem: (key: string): string | null => {
-    if (key === 'iris_groq_api_key') return ''
-    if (key === 'iris_hf_api_key') return ''
-    if (key === 'iris_tailvy_api_key') return ''
-    if (key === 'iris_user_name') return 'Debjeet'
-    return null
-  },
-  setItem: (_: string, __: string): void => {},
-  removeItem: (_: string): void => {}
+let storeInstance: any = null
+function getStore() {
+  if (!storeInstance) {
+    const Store = require('electron-store')
+    const StoreClass = Store.default || Store
+    storeInstance = new StoreClass()
+  }
+  return storeInstance
 }
+
+const execAsync = util.promisify(exec)
 
 // ─── Types ───
 interface BotConfig {
@@ -636,8 +637,8 @@ async function handleAICommand(userMessage: string, chatId: string): Promise<str
   // ── Build fallback key chain ──
   const keys = {
     geminiKey: botConfig?.geminiKey || '',
-    groqKey: botConfig?.groqKey || localStorage.getItem('iris_groq_api_key') || '',
-    hfKey: localStorage.getItem('iris_hf_api_key') || '',
+    groqKey: botConfig?.groqKey || (getStore().get('iris_groq_api_key') as string) || '',
+    hfKey: (getStore().get('iris_hf_api_key') as string) || '',
     ollamaUrl: 'http://localhost:11434'
   }
 
@@ -978,7 +979,7 @@ async function handleSpotify(songName: string): Promise<string> {
 
 async function handleImageGeneration(prompt: string, chatId: string): Promise<string> {
   if (!prompt) return `${EMOJI.warning} Usage: <code>/image &lt;prompt&gt;</code>`
-  const hfKey = localStorage.getItem('iris_hf_api_key') || ''
+  const hfKey = (getStore().get('iris_hf_api_key') as string) || ''
   if (!hfKey) return `${EMOJI.error} HuggingFace key required in Settings`
   try {
     await sendTelegram(`${EMOJI.spark} Generating: "${prompt}"...`, chatId)
@@ -1020,7 +1021,7 @@ async function handleWebsiteBuild(description: string, chatId: string): Promise<
     await sendTelegram(`${EMOJI.terminal} Building website: "${description}"... ~30s`, chatId)
     const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
     const resp = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-04-17',
+      model: 'gemini-1.5-flash',
       contents: `Build a single HTML file for: "${description}". Tailwind CDN, animated. ONLY raw HTML.`
     })
     let html = (resp.text || '')
@@ -1048,7 +1049,7 @@ async function handleVision(chatId: string): Promise<string> {
     const b64 = fs.readFileSync(tmp).toString('base64')
     const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
     const resp = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-04-17',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -1078,7 +1079,7 @@ async function handleOCR(chatId: string): Promise<string> {
     const b64 = fs.readFileSync(tmp).toString('base64')
     const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
     const resp = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-04-17',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
@@ -1103,8 +1104,8 @@ async function handleOCR(chatId: string): Promise<string> {
 
 async function handleDeepResearch(query: string): Promise<string> {
   if (!query) return `${EMOJI.warning} Usage: <code>/research &lt;topic&gt;</code>`
-  const tKey = localStorage.getItem('iris_tailvy_api_key') || ''
-  const gKey = localStorage.getItem('iris_groq_api_key') || botConfig?.groqKey || ''
+  const tKey = (getStore().get('iris_tailvy_api_key') as string) || ''
+  const gKey = (getStore().get('iris_groq_api_key') as string) || botConfig?.groqKey || ''
   if (!tKey || !gKey) return `${EMOJI.error} Tavily + Groq keys required`
   try {
     const { tavily } = await import('@tavily/core')
@@ -1161,7 +1162,7 @@ async function handleCodeGen(desc: string, chatId: string): Promise<string> {
     await sendTelegram(`${EMOJI.terminal} Coding: "${desc}"...`, chatId)
     const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
     const r = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-04-17',
+      model: 'gemini-1.5-flash',
       contents: `Write code for: "${desc}". ONLY raw code. No markdown.`
     })
     let code = (r.text || '')
@@ -1188,7 +1189,7 @@ async function handleCodeReview(fp: string): Promise<string> {
     if (content.length > 20000) return `${EMOJI.error} File too large (>20KB)`
     const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
     const r = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-04-17',
+      model: 'gemini-1.5-flash',
       contents: `Review this code. Bugs? Security? Performance? Suggestions? Rating /10.\n\n${content}`
     })
     return `${EMOJI.brain} <b>Review: ${path.basename(fp)}</b>\n\n${(r.text || '?').substring(0, 3500)}`
@@ -1201,7 +1202,7 @@ async function handleCodeReview(fp: string): Promise<string> {
 
 async function handleSmartFileSearch(query: string): Promise<string> {
   if (!query) return `${EMOJI.warning} Usage: <code>/smartsearch &lt;query&gt;</code>`
-  const gKey = localStorage.getItem('iris_groq_api_key') || botConfig?.groqKey || ''
+  const gKey = (getStore().get('iris_groq_api_key') as string) || botConfig?.groqKey || ''
   if (!gKey) return await handleSearchFiles(query)
   try {
     const Groq = (await import('groq-sdk')).default
@@ -1642,7 +1643,6 @@ async function handleMood(): Promise<string> {
 }
 
 async function handleSuggest(): Promise<string> {
-  const { SuggestionEngine } = require('../soul/suggestion-engine')
   const suggestions = SuggestionEngine.getSuggestions()
   if (!suggestions.length) return `${EMOJI.info} No suggestions right now. Everything looks good!`
   return `${EMOJI.brain} <b>IRIS Suggestions</b>\n\n${suggestions
@@ -1655,13 +1655,11 @@ async function handleSuggest(): Promise<string> {
 
 async function handleWatch(projectPath: string): Promise<string> {
   if (!projectPath) return `${EMOJI.warning} Usage: <code>/watch /path/to/project</code>`
-  const { PairProgrammer } = require('../soul/pair-programmer')
   PairProgrammer.watch(projectPath)
   return `${EMOJI.success} 👁️ Now watching <code>${projectPath}</code>. I'll comment on your code as you work!`
 }
 
 async function handlePair(args: string): Promise<string> {
-  const { PairProgrammer } = require('../soul/pair-programmer')
   if (!args) {
     const status = { active: PairProgrammer.isActive(), stats: PairProgrammer.getStats() }
     return `${EMOJI.ghost} <b>Pair Programmer</b>\n\nActive: ${status.active ? '✅' : '❌'}\nFiles created: ${status.stats.filesCreated}\nFiles modified: ${status.stats.filesModified}\nCommits: ${status.stats.commits}`
