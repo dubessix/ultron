@@ -46,6 +46,16 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
   const [groqKey, setGroqKey] = useState(localStorage.getItem('iris_groq_api_key') || '')
   const [hfKey, setHfKey] = useState(localStorage.getItem('iris_hf_api_key') || '')
   const [tailvyKey, setTailvyKey] = useState(localStorage.getItem('iris_tailvy_api_key') || '')
+  const [aimlKey, setAimlKey] = useState(localStorage.getItem('iris_aiml_api_key') || '')
+  const [ollamaModel, setOllamaModel] = useState(
+    localStorage.getItem('iris_ollama_model') || 'qwen2.5vl:3b'
+  )
+  const [ollamaUrl, setOllamaUrl] = useState(
+    localStorage.getItem('iris_ollama_url') || 'http://localhost:11434'
+  )
+  const [liveModel, setLiveModel] = useState(
+    localStorage.getItem('iris_live_model') || 'models/gemini-3.1-flash-live-preview'
+  )
 
   const [telegramToken, setTelegramToken] = useState(localStorage.getItem('iris_telegram_token') || '')
   const [telegramChatIds, setTelegramChatIds] = useState(localStorage.getItem('iris_telegram_chatids') || '')
@@ -175,12 +185,19 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
     localStorage.setItem('iris_groq_api_key', groqKey)
     localStorage.setItem('iris_hf_api_key', hfKey)
     localStorage.setItem('iris_tailvy_api_key', tailvyKey)
+    localStorage.setItem('iris_aiml_api_key', aimlKey)
+    localStorage.setItem('iris_ollama_model', ollamaModel.trim() || 'qwen2.5vl:3b')
+    localStorage.setItem('iris_ollama_url', ollamaUrl.trim() || 'http://localhost:11434')
+    localStorage.setItem('iris_live_model', liveModel.trim() || 'models/gemini-3.1-flash-live-preview')
 
     if (window.settings) {
       await window.settings.set('iris_custom_api_key', geminiKey)
       await window.settings.set('iris_groq_api_key', groqKey)
       await window.settings.set('iris_hf_api_key', hfKey)
       await window.settings.set('iris_tailvy_api_key', tailvyKey)
+      await window.settings.set('iris_aiml_api_key', aimlKey)
+      await window.settings.set('iris_ollama_model', ollamaModel.trim() || 'qwen2.5vl:3b')
+      await window.settings.set('iris_ollama_url', ollamaUrl.trim() || 'http://localhost:11434')
     }
 
     if (window.electron?.ipcRenderer) {
@@ -669,6 +686,76 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                         />
                       </div>
                     </div>
+
+                    {/* AI/ML API (aimlapi.com) — Gemini text via ai/ml website */}
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
+                        <RiPlugLine size={14} /> AI/ML API (aimlapi.com) — Gemini text
+                      </label>
+                      <div className={inputContainerClass}>
+                        <input
+                          type="password"
+                          value={aimlKey}
+                          onChange={(e) => setAimlKey(e.target.value)}
+                          placeholder="aimlapi key..."
+                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                        />
+                      </div>
+                      <span className="text-[9px] text-zinc-600 font-mono">
+                        Model IDs use vendor prefix, e.g. google/gemini-2.5-flash
+                      </span>
+                    </div>
+
+                    {/* Local model (Ollama) — single ultimate model */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
+                        <RiCpuLine size={14} /> Local Model (Ollama)
+                      </label>
+                      <div className={inputContainerClass}>
+                        <input
+                          type="text"
+                          value={ollamaModel}
+                          onChange={(e) => setOllamaModel(e.target.value)}
+                          placeholder="qwen2.5vl:3b"
+                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ollama server URL */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
+                        <RiPlugLine size={14} /> Ollama URL
+                      </label>
+                      <div className={inputContainerClass}>
+                        <input
+                          type="text"
+                          value={ollamaUrl}
+                          onChange={(e) => setOllamaUrl(e.target.value)}
+                          placeholder="http://localhost:11434"
+                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Voice (Gemini Live) model — fixes the "IRIS won't talk" issue */}
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
+                        <RiPlugLine size={14} /> Voice / Live Model (official Google key only)
+                      </label>
+                      <div className={inputContainerClass}>
+                        <input
+                          type="text"
+                          value={liveModel}
+                          onChange={(e) => setLiveModel(e.target.value)}
+                          placeholder="models/gemini-3.1-flash-live-preview"
+                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                        />
+                      </div>
+                      <span className="text-[9px] text-zinc-600 font-mono">
+                        Real-time voice is Google-only. aimlapi / Ollama cannot power the talk feature.
+                      </span>
+                    </div>
                   </div>
 
                   <div className="bg-[#050505] border border-white/5 p-4 rounded-xl mt-2 flex items-start gap-3">
@@ -820,8 +907,11 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                         const geminiKey = localStorage.getItem('iris_custom_api_key') || ''
                         const groqKey = localStorage.getItem('iris_groq_api_key') || ''
                         const hfKey = localStorage.getItem('iris_hf_api_key') || ''
+                        const aimlKey = localStorage.getItem('iris_aiml_api_key') || ''
                         const result = await window.electron.ipcRenderer.invoke('model-router:health-check', {
-                          geminiKey, groqKey, hfKey, ollamaUrl: 'http://localhost:11434'
+                          geminiKey, groqKey, hfKey, aimlKey,
+                          ollamaUrl: localStorage.getItem('iris_ollama_url') || 'http://localhost:11434',
+                          ollamaModel: localStorage.getItem('iris_ollama_model') || 'qwen2.5vl:3b'
                         })
                         if (result) setModelStatus(result)
                       }}
@@ -836,7 +926,7 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                       FALLBACK CHAIN
                     </p>
                     <p className="text-[10px] text-zinc-400 leading-relaxed">
-                      <b className="text-white">Groq</b> (cloud, 100ms) &#x2192; <b className="text-white">Gemini Flash</b> (cloud, long context) &#x2192; <b className="text-emerald-400">Ollama qwen3:4b</b> (local, offline) &#x2192; <b className="text-white">HuggingFace</b> (cloud, last resort)
+                      <b className="text-white">Groq</b> (cloud, 100ms) &#x2192; <b className="text-white">Gemini Flash</b> (cloud) &#x2192; <b className="text-white">AI/ML API</b> (aimlapi) &#x2192; <b className="text-emerald-400">Ollama qwen2.5vl:3b</b> (local, offline) &#x2192; <b className="text-white">HuggingFace</b> (last resort)
                     </p>
                     <p className="text-[9px] text-zinc-600 mt-2 font-mono">
                       Auto-switches on failure. Health tracked persistently.

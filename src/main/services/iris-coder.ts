@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { IpcMain, App } from 'electron'
 import { exec } from 'child_process'
-import { GoogleGenAI } from '@google/genai'
+import axios from 'axios'
 
 export default function registerIrisCoder({ ipcMain, app }: { ipcMain: IpcMain; app: App }) {
   const PROJECTS_DIR = path.resolve(app.getPath('userData'), 'Projects')
@@ -18,19 +18,35 @@ export default function registerIrisCoder({ ipcMain, app }: { ipcMain: IpcMain; 
         throw new Error('Missing Gemini API Key. Please configure it in the Command Center Vault.')
       }
 
-      const ai = new GoogleGenAI({ apiKey: geminiKey })
-
-      const response = await ai.models.generateContentStream({
-        model: 'gemini-3-flash-preview',
-        contents: `You are an elite developer. Write the code for: "${prompt}". Output ONLY the raw code for the file ${filename}. Do NOT wrap it in markdown blockquotes.`
-      })
-
-      let fullCode = ''
-      for await (const chunk of response) {
-        if (chunk.text) {
-          fullCode += chunk.text
-          event.sender.send('live-code-chunk', chunk.text)
+      const response = await axios.post(
+        'https://api.aimlapi.com/v1/chat/completions',
+        {
+          model: 'gemini-2.5-flash',
+          messages: [
+            {
+              role: 'user',
+              content: `You are an elite developer. Write the code for: "${prompt}". Output ONLY the raw code for the file ${filename}. Do NOT wrap it in markdown blockquotes.`
+            }
+          ],
+          temperature: 0.7
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${geminiKey}`,
+            'Content-Type': 'application/json'
+          }
         }
+      )
+
+      const fullCode = response.data.choices[0]?.message?.content || ''
+
+      // Simulate streaming chunks to the frontend UI
+      const words = fullCode.split(' ')
+      let currentText = ''
+      for (let i = 0; i < words.length; i += 8) {
+        const chunk = words.slice(i, i + 8).join(' ') + ' '
+        event.sender.send('live-code-chunk', chunk)
+        await new Promise((r) => setTimeout(r, 20))
       }
 
       fs.writeFileSync(filePath, fullCode)

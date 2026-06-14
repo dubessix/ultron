@@ -1,115 +1,107 @@
-import { Canvas, useFrame } from '@react-three/fiber'
-import { useRef, useMemo } from 'react'
-import * as THREE from 'three'
+import { useEffect, useMemo, useState } from 'react'
 import { irisService } from '@renderer/services/Iris-voice-ai'
 
-const CustomParticleSphere = ({ count = 3000 }) => {
-  const mesh = useRef<THREE.Points>(null)
-
+const Sphere = () => {
   const dataArray = useMemo(() => new Uint8Array(128), [])
 
-  const colorStart = useMemo(() => new THREE.Color('#33db12'), [])
-  const colorEnd = useMemo(() => new THREE.Color('#FFFFFF'), [])
-  const colorTarget = useMemo(() => new THREE.Color(), [])
+  const [volume, setVolume] = useState(0)
 
-  const { positions, originalPositions, spreadFactors } = useMemo(() => {
-    const pos = new Float32Array(count * 3)
-    const orig = new Float32Array(count * 3)
-    const spread = new Float32Array(count)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!irisService.analyser) {
+        setVolume((v) => Math.max(0.05, v * 0.95))
+        return
+      }
 
-    for (let i = 0; i < count; i++) {
-      const x = Math.random() * 2 - 1
-      const y = Math.random() * 2 - 1
-      const z = Math.random() * 2 - 1
-
-      const vector = new THREE.Vector3(x, y, z)
-      vector.normalize().multiplyScalar(2)
-
-      pos[i * 3] = vector.x
-      pos[i * 3 + 1] = vector.y
-      pos[i * 3 + 2] = vector.z
-
-      orig[i * 3] = vector.x
-      orig[i * 3 + 1] = vector.y
-      orig[i * 3 + 2] = vector.z
-
-      spread[i] = Math.random()
-    }
-    return { positions: pos, originalPositions: orig, spreadFactors: spread }
-  }, [count])
-
-  useFrame((state, delta) => {
-    if (!state.clock.running || !mesh.current) return
-
-    mesh.current.rotation.y += delta * 0.05
-    mesh.current.rotation.z += delta * 0.05
-
-    let volume = 0
-    if (irisService.analyser) {
       irisService.analyser.getByteFrequencyData(dataArray)
 
       let sum = 0
-      const len = dataArray.length
-      for (let i = 0; i < len; i++) {
+      for (let i = 0; i < dataArray.length; i++) {
         sum += dataArray[i]
       }
-      volume = sum / len / 128
-    }
 
-    colorTarget.lerpColors(colorStart, colorEnd, volume)
-    ;(mesh.current.material as THREE.PointsMaterial).color.copy(colorTarget)
+      setVolume(sum / dataArray.length / 128)
+    }, 50)
 
-    const currentPos = mesh.current.geometry.attributes.position.array as Float32Array
+    return () => clearInterval(interval)
+  }, [dataArray])
 
-    for (let i = 0; i < count; i++) {
-      const ix = i * 3
-      const iy = i * 3 + 1
-      const iz = i * 3 + 2
-
-      const expansion = 1 + volume * spreadFactors[i] * 0.4
-
-      currentPos[ix] = originalPositions[ix] * expansion
-      currentPos[iy] = originalPositions[iy] * expansion
-      currentPos[iz] = originalPositions[iz] * expansion
-    }
-
-    mesh.current.geometry.attributes.position.needsUpdate = true
-  })
+  const scale = 1 + volume * 0.35
 
   return (
-    <points ref={mesh}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <pointsMaterial
-        color="#00F0FF"
-        size={0.012}
-        transparent={true}
-        opacity={0.9}
-        sizeAttenuation={true}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
+    <div className="relative flex items-center justify-center w-full h-full overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute w-72 h-72 rounded-full bg-cyan-500/20 blur-3xl animate-pulse" />
+      <div className="absolute w-64 h-64 rounded-full bg-violet-500/20 blur-3xl animate-pulse" />
+
+      {/* Orbit ring */}
+      <div
+        className="absolute w-72 h-72 rounded-full border border-cyan-400/20"
+        style={{
+          animation: 'spin 20s linear infinite'
+        }}
       />
-    </points>
-  )
-}
 
-const Sphere = () => {
-  return (
-    <Canvas
-      camera={{ position: [0, 0, 4.5] }}
-      dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 1.5) : 1}
-      performance={{ min: 0.5 }}
-      gl={{ 
-        antialias: true, 
-        alpha: true,
-        powerPreference: 'default',
-        failIfMajorPerformanceCaveat: false
-      }}
-    >
-      <ambientLight intensity={0.6} />
-      <CustomParticleSphere />
-    </Canvas>
+      {/* Orbit ring 2 */}
+      <div
+        className="absolute w-56 h-56 rounded-full border border-violet-400/20"
+        style={{
+          animation: 'spinReverse 12s linear infinite'
+        }}
+      />
+
+      {/* Main Orb */}
+      <div
+        className="relative transition-all duration-100"
+        style={{
+          transform: `scale(${scale})`
+        }}
+      >
+        {/* Outer glow */}
+        <div className="absolute inset-0 w-44 h-44 rounded-full bg-cyan-400/30 blur-2xl" />
+
+        {/* Sphere */}
+        <div
+          className="relative w-44 h-44 rounded-full"
+          style={{
+            background: `radial-gradient(circle at 30% 30%, #ffffff, ${
+              volume > 0.4 ? '#ffffff' : '#33db12'
+            } 35%, #00f0ff 70%, #001122 100%)`,
+            boxShadow: `
+              0 0 ${40 + volume * 60}px rgba(0,240,255,0.8),
+              0 0 ${80 + volume * 100}px rgba(0,240,255,0.4)
+            `
+          }}
+        >
+          {/* Glass layer */}
+          <div className="absolute inset-3 rounded-full bg-white/10 backdrop-blur-md" />
+
+          {/* Core */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className="rounded-full bg-white"
+              style={{
+                width: `${16 + volume * 16}px`,
+                height: `${16 + volume * 16}px`,
+                filter: 'blur(3px)'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes spinReverse {
+          from { transform: rotate(360deg); }
+          to { transform: rotate(0deg); }
+        }
+      `}</style>
+    </div>
   )
 }
 

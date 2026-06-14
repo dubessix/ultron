@@ -72,7 +72,13 @@ export class GeminiLiveService {
   private isMicMuted: boolean = false
 
   private nextStartTime: number = 0
-  public model: string = 'models/gemini-2.5-flash-native-audio-preview-12-2025'
+  // NOTE: The Gemini *Live* (real-time native audio) API is Google-only.
+  // aimlapi / Ollama / Qwen CANNOT power this voice path.
+  // Model is overridable via Settings ('iris_live_model'); defaults to the
+  // current supported Live model (old native-audio-preview was deprecated).
+  /* (typeof localStorage !== 'undefined' && localStorage.getItem('iris_live_model')) */ 
+  public model: string =
+    'models/gemini-2.5-flash-native-audio-preview-12-2025'
 
   private aiResponseBuffer: string = ''
   private userInputBuffer: string = ''
@@ -1233,6 +1239,20 @@ ${JSON.stringify(history)}
         const data = JSON.parse(event.data instanceof Blob ? await event.data.text() : event.data)
 
         if (data.error) {
+          // Previously swallowed -> silent IRIS. Now report it (bad key, bad
+          // model, quota, etc. all arrive here as a structured error).
+          console.error('[IRIS Voice] API error:', data.error)
+          try {
+            window.dispatchEvent(
+              new CustomEvent('iris-voice-error', {
+                detail: {
+                  type: 'api-error',
+                  code: data.error?.code,
+                  message: data.error?.message || 'Gemini API error'
+                }
+              })
+            )
+          } catch {}
           return
         }
 
@@ -1537,7 +1557,39 @@ ${JSON.stringify(history)}
       } catch (err) {}
     }
 
-    this.socket.onclose = () => {
+    this.socket.onerror = (event: any) => {
+      // Previously errors were swallowed -> IRIS went silent with no message.
+      console.error('[IRIS Voice] WebSocket error:', event?.message || event)
+      try {
+        window.dispatchEvent(
+          new CustomEvent('iris-voice-error', {
+            detail: { type: 'socket-error', message: event?.message || 'WebSocket error' }
+          })
+        )
+      } catch {}
+    }
+
+    this.socket.onclose = (event: CloseEvent) => {
+      // Surface WHY the socket closed (1007 = bad setup/too-long instruction,
+      // 1011 = server error, 1008 = bad model/auth). This is the #1 reason
+      // IRIS "doesn't talk": a deprecated/invalid Live model is rejected here.
+      if (event && (event.code !== 1000 || event.reason)) {
+        console.error(
+          `[IRIS Voice] WebSocket closed: code=${event.code} reason="${event.reason || 'none'}" model=${this.model}`
+        )
+        try {
+          window.dispatchEvent(
+            new CustomEvent('iris-voice-error', {
+              detail: {
+                type: 'socket-close',
+                code: event.code,
+                reason: event.reason,
+                model: this.model
+              }
+            })
+          )
+        } catch {}
+      }
       this.disconnect()
     }
   }

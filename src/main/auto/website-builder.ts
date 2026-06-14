@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow, app } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
-import { GoogleGenAI } from '@google/genai'
+import axios from 'axios'
 
 let previewWin: BrowserWindow | null = null
 
@@ -39,8 +39,6 @@ export default function registerWebsiteBuilder() {
         )
       }
 
-      const ai = new GoogleGenAI({ apiKey: geminiKey })
-
       const sysPrompt = `You are an elite, Awwwards-winning frontend developer and UI/UX designer. 
 Build a highly animated, visually stunning, clean, and premium website based on the user prompt.
 
@@ -76,30 +74,44 @@ CRITICAL RULES:
 
 OUTPUT ONLY RAW HTML.`
 
-      const response = await ai.models.generateContentStream({
-        model: 'gemini-3-flash-preview',
-        contents: `${sysPrompt}\n\nUSER PROMPT: ${prompt}`
-      })
-
-      let fullCode = ''
-
-      for await (const chunk of response) {
-        if (chunk.text) {
-          fullCode += chunk.text
-
-          let cleanCode = fullCode.replace(/^```html\n?/, '').replace(/```$/, '')
-
-          const safeCode = encodeURIComponent(cleanCode)
-          if (previewWin && !previewWin.isDestroyed()) {
-            previewWin.webContents
-              .executeJavaScript(
-                `
-              document.getElementById('live-frame').srcdoc = decodeURIComponent('${safeCode.replace(/'/g, "\\'")}');
-            `
-              )
-              .catch(() => {})
+      const response = await axios.post(
+        'https://api.aimlapi.com/v1/chat/completions',
+        {
+          model: 'gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: sysPrompt },
+            { role: 'user', content: `USER PROMPT: ${prompt}` }
+          ],
+          temperature: 0.7
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${geminiKey}`,
+            'Content-Type': 'application/json'
           }
         }
+      )
+
+      const fullCode = response.data.choices[0]?.message?.content || ''
+
+      // Simulate streaming chunks for visual pleasure in UI
+      let currentText = ''
+      const words = fullCode.split(' ')
+      for (let i = 0; i < words.length; i += 12) {
+        const chunk = words.slice(i, i + 12).join(' ') + ' '
+        currentText += chunk
+        const cleanCode = currentText.replace(/^```html\n?/, '').replace(/```$/, '')
+        const safeCode = encodeURIComponent(cleanCode)
+        if (previewWin && !previewWin.isDestroyed()) {
+          previewWin.webContents
+            .executeJavaScript(
+              `
+            document.getElementById('live-frame').srcdoc = decodeURIComponent('${safeCode.replace(/'/g, "\\'")}');
+          `
+            )
+            .catch(() => {})
+        }
+        await new Promise((r) => setTimeout(r, 30))
       }
 
       if (previewWin && !previewWin.isDestroyed()) {

@@ -61,6 +61,9 @@ export interface ModelKeys {
   hfKey?: string
   ollamaUrl?: string
   ollamaModel?: string // Allow overriding default model
+  aimlKey?: string // ai/ml api (aimlapi.com) — OpenAI-compatible Gemini access
+  aimlModel?: string // e.g. 'gemini-2.5-flash' on aimlapi
+  geminiModel?: string // override the official Gemini text model
 }
 
 export interface ModelStatus {
@@ -135,7 +138,7 @@ const MODEL_CHAIN: ModelDef[] = [
   {
     name: 'Gemini Flash',
     provider: 'google',
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash', // gemini-1.5-flash is being retired -> use current
     maxFreeRPM: 15,
     tier: 1,
     ramMB: 0, // Cloud — zero RAM
@@ -143,15 +146,25 @@ const MODEL_CHAIN: ModelDef[] = [
     bestFor: 'long context, vision, analysis'
   },
   {
+    name: 'AI/ML API',
+    provider: 'aimlapi',
+    model: 'google/gemini-2.5-flash', // aimlapi.com uses vendor-prefixed IDs (google/...)
+    maxFreeRPM: 20,
+    tier: 1,
+    ramMB: 0, // Cloud — zero RAM
+    diskGB: 0,
+    bestFor: 'Gemini via ai/ml api (aimlapi.com)'
+  },
+  {
     name: 'Ollama Local',
     provider: 'ollama',
-    model: 'qwen3:4b', // ← USER PRIMARY — smart + fits 4GB
+    model: 'qwen2.5vl:3b', // ← USER PRIMARY — single ultimate local model (vision-capable)
     maxFreeRPM: 999,
     tier: 2,
-    ramMB: 2600, // ~2.6 GB
-    diskGB: 2.5,
-    bestFor: 'OFFLINE hero, primary local model',
-    localModel: 'qwen3:4b'
+    ramMB: 3200, // ~3.2 GB
+    diskGB: 3.2,
+    bestFor: 'OFFLINE hero, primary local model (vision)',
+    localModel: 'qwen2.5vl:3b'
   },
   {
     name: 'HuggingFace',
@@ -173,13 +186,13 @@ const CODE_MODELS: Record<string, ModelDef> = {
   ollama: {
     name: 'Ollama Code',
     provider: 'ollama',
-    model: 'stable-code:3b', // ← Best code model for 4GB
+    model: 'qwen2.5vl:3b', // ← single ultimate local model (used for code too)
     maxFreeRPM: 999,
     tier: 0,
-    ramMB: 2000,
-    diskGB: 1.6,
+    ramMB: 3200,
+    diskGB: 3.2,
     bestFor: 'code generation, refactoring',
-    localModel: 'stable-code:3b'
+    localModel: 'qwen2.5vl:3b'
   },
   groq: {
     name: 'Groq Coder',
@@ -200,13 +213,13 @@ const CODE_MODELS: Record<string, ModelDef> = {
 const FAST_MODEL: ModelDef = {
   name: 'Ollama Fast',
   provider: 'ollama',
-  model: 'llama3.2:1b', // ← FASTEST, 0.8GB RAM
+  model: 'qwen2.5vl:3b', // ← single ultimate local model
   maxFreeRPM: 999,
   tier: 0,
-  ramMB: 800,
-  diskGB: 1.2,
+  ramMB: 3200,
+  diskGB: 3.2,
   bestFor: 'ULTRA fast responses, classifications',
-  localModel: 'llama3.2:1b'
+  localModel: 'qwen2.5vl:3b'
 }
 
 // ━━━ ALL RECOMMENDED MODELS FOR 4GB RAM ━━━━━━━━━━━━━━━━━━━━
@@ -291,6 +304,12 @@ export const RECOMMENDED_MODELS = [
     why: '⚠️ TIGHT FIT — close other apps'
   }
 ]
+
+// Resolve a model string by provider (avoids fragile MODEL_CHAIN[index] usage
+// that breaks whenever the chain order changes).
+function modelFor(provider: string): string {
+  return MODEL_CHAIN.find((m) => m.provider === provider)?.model || ''
+}
 
 // ━━━ HEALTH STATE (persisted) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -379,7 +398,7 @@ async function callGemini(
       parts: [{ text: m.content }]
     }))
     const response = await ai.models.generateContent({
-      model: MODEL_CHAIN[1].model,
+      model: keys.geminiModel || modelFor('google'),
       contents: contents as any,
       config: {
         maxOutputTokens: opts.maxTokens || 2048,
@@ -392,7 +411,7 @@ async function callGemini(
 
   const fullPrompt = opts.systemPrompt ? `${opts.systemPrompt}\n\n${prompt}` : prompt
   const response = await ai.models.generateContent({
-    model: MODEL_CHAIN[1].model,
+    model: keys.geminiModel || modelFor('google'),
     contents: fullPrompt,
     config: {
       maxOutputTokens: opts.maxTokens || 2048,
@@ -420,7 +439,7 @@ async function callGroq(
   }
 
   const completion = await groq.chat.completions.create({
-    model: MODEL_CHAIN[0].model,
+    model: modelFor('groq'),
     messages,
     max_tokens: opts.maxTokens || 2048,
     temperature: opts.temperature ?? 0.7,
@@ -455,7 +474,7 @@ async function callHuggingFace(
   }
 
   const response = await client.chatCompletion({
-    model: MODEL_CHAIN[3].model,
+    model: modelFor('huggingface'),
     messages,
     max_tokens: opts.maxTokens || 2048,
     temperature: opts.temperature ?? 0.7
@@ -467,6 +486,64 @@ async function callHuggingFace(
   }
 }
 
+function sanitizeText(text: string): string {
+  return text
+    .replace(/—/g, '-')
+    .replace(/–/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/…/g, '...')
+}
+
+// AI/ML API (aimlapi.com) — OpenAI-compatible endpoint that proxies Gemini.
+// This is how the user's "ai/ml website API for the Gemini part" is wired in.
+async function callAimlApi(
+  prompt: string,
+  keys: ModelKeys,
+  opts: ChatOptions
+): Promise<{ text: string; tokens?: number }> {
+  if (!keys.aimlKey) throw new Error('No AI/ML API key')
+
+  // aimlapi.com expects vendor-prefixed model IDs, e.g. 'google/gemini-2.5-flash'.
+  // Auto-prefix bare Gemini names so a plain 'gemini-2.5-flash' from Settings still works.
+  let aimlModel = keys.aimlModel || modelFor('aimlapi')
+  if (/^gemini[-.]/i.test(aimlModel)) aimlModel = `google/${aimlModel}`
+
+  const messages: any[] = []
+  if (opts.systemPrompt) messages.push({ role: 'system', content: opts.systemPrompt })
+  if (opts.messages && opts.messages.length > 0) {
+    messages.push(...opts.messages)
+  } else {
+    messages.push({ role: 'user', content: prompt })
+  }
+
+  const res = await fetch('https://api.aimlapi.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${keys.aimlKey}`
+    },
+    body: JSON.stringify({
+      model: aimlModel,
+      messages,
+      max_tokens: opts.maxTokens || 2048,
+      temperature: opts.temperature ?? 0.7,
+      response_format: opts.jsonMode ? { type: 'json_object' } : undefined
+    }),
+    signal: AbortSignal.timeout(30000)
+  })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`AI/ML API error: ${res.status} ${body.slice(0, 200)}`)
+  }
+  const data = await res.json()
+  return {
+    text: data.choices?.[0]?.message?.content || '',
+    tokens: data.usage?.total_tokens
+  }
+}
+
 async function callOllama(
   prompt: string,
   keys: ModelKeys,
@@ -474,7 +551,7 @@ async function callOllama(
   modelName?: string
 ): Promise<{ text: string; tokens?: number }> {
   const url = keys.ollamaUrl || 'http://localhost:11434'
-  const model = modelName || keys.ollamaModel || MODEL_CHAIN[2].model
+  const model = keys.ollamaModel || modelName || modelFor('ollama')
   const messages: any[] = []
   if (opts.systemPrompt) messages.push({ role: 'system', content: opts.systemPrompt })
   if (opts.messages && opts.messages.length > 0) {
@@ -552,6 +629,8 @@ export class ModelRouter {
             return callGroq(prompt, opts.keys, opts)
           case 'huggingface':
             return callHuggingFace(prompt, opts.keys, opts)
+          case 'aimlapi':
+            return callAimlApi(prompt, opts.keys, opts)
           case 'ollama':
             return callOllama(prompt, opts.keys, opts, def.model)
           default:
@@ -611,7 +690,7 @@ export class ModelRouter {
   }
 
   static async callModel(
-    provider: 'google' | 'groq' | 'huggingface' | 'ollama',
+    provider: 'google' | 'groq' | 'huggingface' | 'ollama' | 'aimlapi',
     prompt: string,
     opts: ChatOptions
   ): Promise<ModelResponse> {
@@ -629,6 +708,9 @@ export class ModelRouter {
         break
       case 'huggingface':
         result = await callHuggingFace(prompt, opts.keys, opts)
+        break
+      case 'aimlapi':
+        result = await callAimlApi(prompt, opts.keys, opts)
         break
       case 'ollama':
         result = await callOllama(prompt, opts.keys, opts)
@@ -707,6 +789,10 @@ export class ModelRouter {
             if (!keys.hfKey) throw new Error('No key')
             await callHuggingFace('health check', keys, { keys, maxTokens: 5 })
             break
+          case 'aimlapi':
+            if (!keys.aimlKey) throw new Error('No key')
+            await callAimlApi('health check', keys, { keys, maxTokens: 5 })
+            break
           case 'ollama':
             await callOllama('health check', keys, { keys, maxTokens: 5 })
             break
@@ -730,10 +816,20 @@ export class ModelRouter {
         geminiKey: store.get('iris_custom_api_key', '') as string,
         groqKey: store.get('iris_groq_api_key', '') as string,
         hfKey: store.get('iris_hf_api_key', '') as string,
-        ollamaUrl: 'http://localhost:11434'
+        aimlKey: store.get('iris_aiml_api_key', '') as string,
+        aimlModel: (store.get('iris_aiml_model', '') as string) || undefined,
+        ollamaUrl: (store.get('iris_ollama_url', '') as string) || 'http://localhost:11434',
+        ollamaModel: (store.get('iris_ollama_model', '') as string) || 'qwen2.5vl:3b'
       }
     } catch {
-      return { geminiKey: '', groqKey: '', hfKey: '', ollamaUrl: 'http://localhost:11434' }
+      return {
+        geminiKey: '',
+        groqKey: '',
+        hfKey: '',
+        aimlKey: '',
+        ollamaUrl: 'http://localhost:11434',
+        ollamaModel: 'qwen2.5vl:3b'
+      }
     }
   }
 
@@ -754,6 +850,10 @@ export class ModelRouter {
           case 'huggingface':
             if (!keys.hfKey) throw new Error('No key')
             await callHuggingFace('ping', keys, { keys, maxTokens: 5 })
+            break
+          case 'aimlapi':
+            if (!keys.aimlKey) throw new Error('No key')
+            await callAimlApi('ping', keys, { keys, maxTokens: 5 })
             break
           case 'ollama':
             await callOllama('ping', keys, { keys, maxTokens: 5 })

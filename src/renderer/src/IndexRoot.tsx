@@ -34,6 +34,10 @@ const IndexRoot = () => {
           'iris_groq_api_key',
           'iris_hf_api_key',
           'iris_tailvy_api_key',
+          'iris_aiml_api_key',
+          'iris_ollama_model',
+          'iris_ollama_url',
+          'iris_live_model',
           'iris_telegram_token',
           'iris_telegram_chatids',
           'iris_user_name',
@@ -73,6 +77,29 @@ const IndexRoot = () => {
     return () => {
       window.electron.ipcRenderer.removeAllListeners('overlay-mode')
     }
+  }, [])
+
+  // ─── Surface voice/Live errors instead of failing silently ───
+  useEffect(() => {
+    const onVoiceError = (e: any) => {
+      const d = e?.detail || {}
+      let msg = '⚠️ IRIS voice connection failed.'
+      if (d.type === 'socket-close' && d.code) {
+        msg += `\n\nThe Gemini Live model was rejected (code ${d.code}).`
+        msg += `\nModel: ${d.model || 'unknown'}`
+        if (d.code === 1007 || d.code === 1008) {
+          msg += `\n\nThis usually means the Live model name is invalid/deprecated. Update it in Settings → 'Live Model' (try gemini-3.1-flash-live-preview).`
+        }
+      } else if (d.type === 'api-error') {
+        msg += `\n\nGemini API error${d.code ? ` (${d.code})` : ''}: ${d.message}`
+      } else if (d.message) {
+        msg += `\n\n${d.message}`
+      }
+      console.error('[IRIS] Voice error surfaced:', d)
+      alert(msg)
+    }
+    window.addEventListener('iris-voice-error', onVoiceError)
+    return () => window.removeEventListener('iris-voice-error', onVoiceError)
   }, [])
 
   useEffect(() => {

@@ -63,9 +63,11 @@ export default function ModelHealthCard() {
       const geminiKey = localStorage.getItem('iris_custom_api_key') || ''
       const groqKey = localStorage.getItem('iris_groq_api_key') || ''
       const hfKey = localStorage.getItem('iris_hf_api_key') || ''
+      const aimlKey = localStorage.getItem('iris_aiml_api_key') || ''
       await window.electron.ipcRenderer.invoke('model-router:health-check', {
-        geminiKey, groqKey, hfKey,
-        ollamaUrl: 'http://localhost:11434'
+        geminiKey, groqKey, hfKey, aimlKey,
+        ollamaUrl: localStorage.getItem('iris_ollama_url') || 'http://localhost:11434',
+        ollamaModel: localStorage.getItem('iris_ollama_model') || 'qwen2.5vl:3b'
       })
       await loadStatus()
     } catch (_e) {}

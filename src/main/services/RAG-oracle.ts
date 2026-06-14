@@ -2,8 +2,8 @@ import { IpcMain, app } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
-import { GoogleGenAI } from '@google/genai'
 import Groq from 'groq-sdk'
+import axios from 'axios'
 
 const getStateDir = () => path.join(app.getPath('userData'), 'iris_scan_states')
 
@@ -54,6 +54,31 @@ const cosineSimilarity = (vecA: number[], vecB: number[]) => {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+async function getEmbeddingsFromAIML(texts: string[], apiKey: string): Promise<number[][]> {
+  const embeddings: number[][] = []
+  for (const text of texts) {
+    const response = await axios.post(
+      'https://api.aimlapi.com/v1/embeddings',
+      {
+        model: 'text-embedding-3-small',
+        input: text
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    if (response.data?.data?.[0]?.embedding) {
+      embeddings.push(response.data.data[0].embedding)
+    } else {
+      throw new Error('Failed to generate embedding')
+    }
+  }
+  return embeddings
+}
+
 export default function registerOracle({ ipcMain }: { ipcMain: IpcMain }) {
   ipcMain.handle('cancel-ingestion', () => {
     isCancelled = true
@@ -68,7 +93,6 @@ export default function registerOracle({ ipcMain }: { ipcMain: IpcMain }) {
 
       const targetPath = path.normalize(dirPath.trim())
       isCancelled = false
-      const ai = new GoogleGenAI({ apiKey: geminiKey })
 
       const prevState = await loadState(targetPath)
       if (prevState) {
@@ -164,13 +188,11 @@ export default function registerOracle({ ipcMain }: { ipcMain: IpcMain }) {
         }
 
         try {
-          const response: any = await ai.models.embedContent({
-            model: 'gemini-embedding-001',
-            contents: validChunks.map((chunk) => `File: ${fileName}\n\n${chunk}`),
-            config: { taskType: 'RETRIEVAL_DOCUMENT' }
-          })
-          response.embeddings.forEach((emb: any, idx: number) => {
-            vectorDB.push({ filePath: fullPath, chunk: validChunks[idx], embedding: emb.values })
+          const textsToEmbed = validChunks.map((chunk) => `File: ${fileName}\n\n${chunk}`)
+          const embeddings = await getEmbeddingsFromAIML(textsToEmbed, geminiKey)
+          
+          embeddings.forEach((emb, idx) => {
+            vectorDB.push({ filePath: fullPath, chunk: validChunks[idx], embedding: emb })
           })
 
           processedFiles.add(fullPath)
@@ -187,9 +209,9 @@ export default function registerOracle({ ipcMain }: { ipcMain: IpcMain }) {
             totalFiles: allFiles.length,
             chunks: vectorDB.length
           })
-          await sleep(3500)
+          await sleep(1000) // Much faster than Gemini native loop!
         } catch (apiError) {
-          await sleep(5000)
+          await sleep(2000)
         }
       }
 
@@ -208,15 +230,10 @@ export default function registerOracle({ ipcMain }: { ipcMain: IpcMain }) {
         throw new Error('Missing API Keys. Ensure both Gemini and Groq are configured in Settings.')
       }
 
-      const ai = new GoogleGenAI({ apiKey: geminiKey })
       const groq = new Groq({ apiKey: groqKey })
 
-      const queryResponse: any = await ai.models.embedContent({
-        model: 'gemini-embedding-001',
-        contents: query,
-        config: { taskType: 'RETRIEVAL_QUERY' }
-      })
-      const queryEmbedding = queryResponse.embeddings[0].values
+      const queryResponse = await getEmbeddingsFromAIML([query], geminiKey)
+      const queryEmbedding = queryResponse[0]
 
       const rankedChunks = vectorDB
         .map((item) => ({ ...item, score: cosineSimilarity(queryEmbedding, item.embedding) }))
@@ -234,16 +251,14 @@ export default function registerOracle({ ipcMain }: { ipcMain: IpcMain }) {
           },
           { role: 'user', content: `Context:\n${contextText}\n\nQuestion: ${query}` }
         ],
-        model: 'llama-3.1-8b-instant'
+        model: 'llama-3.1-8b-instant',
+        max_tokens: 1500,
+        temperature: 0.3
       })
 
-      return {
-        success: true,
-        answer: chatCompletion.choices[0].message.content,
-        scannedFiles: rankedChunks.map((c) => c.filePath)
-      }
+      return { success: true, answer: chatCompletion.choices[0]?.message?.content || '' }
     } catch (err) {
-      return { success: false, error: String(err) }
+      return { success: false, answer: `Failed to consult Oracle: ${String(err)}` }
     }
   })
 }

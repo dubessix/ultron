@@ -9,7 +9,6 @@
 
 import { IpcMain, app, shell, BrowserWindow } from 'electron'
 import { exec, execSync } from 'child_process'
-import { GoogleGenAI } from '@google/genai'
 import { ModelRouter } from '../ai/model-router'
 import { PersonalityEngine } from '../soul/personality-engine'
 import { BrainRouter } from '../brain/brain-router'
@@ -1012,6 +1011,27 @@ async function handleImageGeneration(prompt: string, chatId: string): Promise<st
   }
 }
 
+// ──── AIML API HELPER ────
+
+async function callAimlChat(messages: any[], apiKey: string): Promise<string> {
+  const axios = require('axios')
+  const response = await axios.post(
+    'https://api.aimlapi.com/v1/chat/completions',
+    {
+      model: 'gemini-2.5-flash',
+      messages,
+      max_tokens: 3000
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+  return response.data?.choices?.[0]?.message?.content || ''
+}
+
 // ──── WEBSITE BUILDER ────
 
 async function handleWebsiteBuild(description: string, chatId: string): Promise<string> {
@@ -1019,22 +1039,17 @@ async function handleWebsiteBuild(description: string, chatId: string): Promise<
   if (!botConfig?.geminiKey) return `${EMOJI.error} Gemini key required`
   try {
     await sendTelegram(`${EMOJI.terminal} Building website: "${description}"... ~30s`, chatId)
-    const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
-    const resp = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: `Build a single HTML file for: "${description}". Tailwind CDN, animated. ONLY raw HTML.`
-    })
-    let html = (resp.text || '')
-      .replace(/^```html\n?/, '')
-      .replace(/```$/, '')
-      .trim()
+    const html = await callAimlChat(
+      [{ role: 'user', content: `Build a single HTML file for: "${description}". Tailwind CDN, animated. ONLY raw HTML.` }],
+      botConfig.geminiKey
+    )
     const savePath = path.join(os.homedir(), 'Desktop', `iris_site_${Date.now()}.html`)
-    fs.writeFileSync(savePath, html, 'utf-8')
+    fs.writeFileSync(savePath, html.replace(/^```html\n?/, '').replace(/```$/, '').trim(), 'utf-8')
     await sendTelegramFile(savePath, `${EMOJI.globe} Website: "${description}"`, chatId)
     shell.openPath(savePath)
     return ''
-  } catch (e) {
-    return `${EMOJI.error} Build failed: ${(e as Error).message}`
+  } catch (e: any) {
+    return `${EMOJI.error} Build failed: ${e.message}`
   }
 }
 
@@ -1047,26 +1062,26 @@ async function handleVision(chatId: string): Promise<string> {
     const tmp = path.join(os.tmpdir(), `vis_${Date.now()}.png`)
     await screenshot({ filename: tmp })
     const b64 = fs.readFileSync(tmp).toString('base64')
-    const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
-    const resp = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: {
-        parts: [
-          {
-            text: 'Describe what you see on this screen in detail. List apps, code, errors, info.'
-          },
-          { inlineData: { mimeType: 'image/png', data: b64 } }
+    
+    const messages = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Describe what you see on this screen in detail. List apps, code, errors, info.' },
+          { type: 'image_url', image_url: { url: `data:image/png;base64,${b64}` } }
         ]
       }
-    })
+    ]
+    const text = await callAimlChat(messages, botConfig.geminiKey)
+
     setTimeout(() => {
       try {
         fs.unlinkSync(tmp)
       } catch {}
     }, 5000)
-    return `${EMOJI.brain} <b>Screen Analysis:</b>\n\n${(resp.text || '?').substring(0, 3500)}`
-  } catch (e) {
-    return `${EMOJI.error} Vision failed`
+    return `${EMOJI.brain} <b>Screen Analysis:</b>\n\n${text.substring(0, 3500)}`
+  } catch (e: any) {
+    return `${EMOJI.error} Vision failed: ${e.message}`
   }
 }
 
@@ -1077,26 +1092,26 @@ async function handleOCR(chatId: string): Promise<string> {
     const tmp = path.join(os.tmpdir(), `ocr_${Date.now()}.png`)
     await screenshot({ filename: tmp })
     const b64 = fs.readFileSync(tmp).toString('base64')
-    const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
-    const resp = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: {
-        parts: [
-          {
-            text: 'Extract ALL text/code visible. Preserve formatting. Output exactly as visible.'
-          },
-          { inlineData: { mimeType: 'image/png', data: b64 } }
+    
+    const messages = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Extract ALL text/code visible. Preserve formatting. Output exactly as visible.' },
+          { type: 'image_url', image_url: { url: `data:image/png;base64,${b64}` } }
         ]
       }
-    })
+    ]
+    const text = await callAimlChat(messages, botConfig.geminiKey)
+
     setTimeout(() => {
       try {
         fs.unlinkSync(tmp)
       } catch {}
     }, 5000)
-    return `${EMOJI.file} <b>OCR Result:</b>\n\n<pre>${(resp.text || 'No text').substring(0, 3500)}</pre>`
-  } catch (e) {
-    return `${EMOJI.error} OCR failed`
+    return `${EMOJI.file} <b>OCR Result:</b>\n\n<pre>${text.substring(0, 3500)}</pre>`
+  } catch (e: any) {
+    return `${EMOJI.error} OCR failed: ${e.message}`
   }
 }
 
@@ -1160,23 +1175,19 @@ async function handleCodeGen(desc: string, chatId: string): Promise<string> {
   if (!botConfig?.geminiKey) return `${EMOJI.error} Gemini key required`
   try {
     await sendTelegram(`${EMOJI.terminal} Coding: "${desc}"...`, chatId)
-    const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
-    const r = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: `Write code for: "${desc}". ONLY raw code. No markdown.`
-    })
-    let code = (r.text || '')
-      .replace(/^```\w*\n?/, '')
-      .replace(/```$/, '')
-      .trim()
+    const text = await callAimlChat(
+      [{ role: 'user', content: `Write code for: "${desc}". ONLY raw code. No markdown.` }],
+      botConfig.geminiKey
+    )
+    const code = text.replace(/^```\w*\n?/, '').replace(/```$/, '').trim()
     const pDir = path.resolve(app.getPath('userData'), 'Projects')
     if (!fs.existsSync(pDir)) fs.mkdirSync(pDir, { recursive: true })
     const fp = path.join(pDir, `tg_code_${Date.now()}.txt`)
     fs.writeFileSync(fp, code, 'utf-8')
     await sendTelegramFile(fp, `${EMOJI.terminal} Code: "${desc}"`, chatId)
     return ''
-  } catch (e) {
-    return `${EMOJI.error} Code gen failed`
+  } catch (e: any) {
+    return `${EMOJI.error} Code gen failed: ${e.message}`
   }
 }
 
@@ -1187,14 +1198,13 @@ async function handleCodeReview(fp: string): Promise<string> {
     if (!fs.existsSync(fp)) return `${EMOJI.error} Not found: ${fp}`
     const content = fs.readFileSync(fp, 'utf-8')
     if (content.length > 20000) return `${EMOJI.error} File too large (>20KB)`
-    const ai = new GoogleGenAI({ apiKey: botConfig.geminiKey })
-    const r = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: `Review this code. Bugs? Security? Performance? Suggestions? Rating /10.\n\n${content}`
-    })
-    return `${EMOJI.brain} <b>Review: ${path.basename(fp)}</b>\n\n${(r.text || '?').substring(0, 3500)}`
-  } catch (e) {
-    return `${EMOJI.error} Review failed`
+    const text = await callAimlChat(
+      [{ role: 'user', content: `Review this code. Bugs? Security? Performance? Suggestions? Rating /10.\n\n${content}` }],
+      botConfig.geminiKey
+    )
+    return `${EMOJI.brain} <b>Review: ${path.basename(fp)}</b>\n\n${text.substring(0, 3500)}`
+  } catch (e: any) {
+    return `${EMOJI.error} Review failed: ${e.message}`
   }
 }
 
